@@ -168,6 +168,45 @@ textarea{width:100%;min-height:120px;font-family:var(--mono);font-size:12.5px;ba
 .fixrow select{min-height:30px;padding:3px 24px 3px 8px}
 .fixrow label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin:4px 0}
 
+/* setup screens: editable tables, rule builder, previews */
+.tabs{margin:4px 0 14px;flex-wrap:wrap}
+.ed{width:100%;min-width:0;border:1px solid transparent;background:var(--surface2);border-radius:4px;padding:5px 7px;font:inherit;font-size:13px}
+.st.tight th,.st.tight td{padding-left:6px;padding-right:6px}
+.btn.sm{padding:3px 10px;min-height:28px;font-size:12.5px}
+.ed:hover:not(:disabled){border-color:var(--line)}
+.ed:disabled{background:transparent;opacity:1;color:var(--ink)}
+.ed.num{text-align:right;font-variant-numeric:tabular-nums}
+select.ed{padding-right:18px}
+.ed[aria-invalid="true"]{border-color:var(--crit);background:var(--crit-bg)}
+.vmsg{margin:0 0 10px;padding:7px 10px;border-radius:6px;background:var(--crit-bg);color:var(--crit);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface2);font-size:12px;white-space:nowrap}
+.chip.m{font-family:var(--mono);font-size:11.5px}
+.rb{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.rbrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.rbl{color:var(--muted);font-size:13px}
+.conds{display:flex;flex-direction:column;gap:6px}
+.cond{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cond select,.cond input,.rbrow select,.rbrow input{min-height:34px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:5px 9px}
+.diff{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.diff h3{margin:0 0 6px;font-size:14px}
+.diff ul{margin:0;padding-left:18px}
+.mx th,.mx td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+.mx thead th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:500}
+.mx select{min-height:32px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:3px 8px}
+.confirm{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--warn-bg);color:var(--ink);margin-bottom:12px}
+.confirm .btns{margin-left:auto}
+.rail h6:first-child{margin-top:0}
+.stk{display:flex;flex-direction:column;gap:4px}
+.st td.mono,.st td.nw,.st span.mono{white-space:nowrap}
+.mx select{width:100%;max-width:none;font-size:13px}
+.rail .badge.w{background:var(--warn);color:var(--surface)}
+.strip{display:flex;gap:3px}
+.strip i{width:14px;height:14px;border-radius:3px;display:block;background:var(--surface2);border:1px solid var(--line)}
+.strip i.ok{background:var(--good);border-color:var(--good)}
+.strip i.gap{background:var(--warn);border-color:var(--warn)}
+.strip i.over{background:var(--crit);border-color:var(--crit)}
+
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(27,22,18,.45);z-index:20}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column;
@@ -244,22 +283,55 @@ var FX=130, CLOSED=9;
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var HUBS=[{id:'NBO',name:'Nairobi'},{id:'GRS',name:'Garissa'},{id:'KSM',name:'Kisumu'}];
 var GRANTS=[
-  {id:'NUT',name:'Child Nutrition',donor:'Bilateral donor A',span:'Jan 2025 to Dec 2027'},
-  {id:'WSH',name:'Water and Hygiene',donor:'Foundation B',span:'Jul 2025 to Jun 2027'},
-  {id:'EDU',name:'Girls Education',donor:'Trust C',span:'Jan 2026 to Dec 2028'}];
+  {id:'NUT1',name:'Community Nutrition Programme',donor:'Bilateral donor A',currency:'USD',start:'2025-01-01',end:'2027-12-31',total:3000000,status:'Active'},
+  {id:'NUT2',name:'Nutrition Scale-up',donor:'Foundation B',currency:'USD',start:'2026-01-01',end:'2028-06-30',total:1500000,status:'Active'},
+  {id:'WSH1',name:'Rural Water Access',donor:'Trust C',currency:'USD',start:'2025-07-01',end:'2027-06-30',total:2200000,status:'Active'},
+  {id:'WSH2',name:'Sanitation and Hygiene',donor:'Multilateral D',currency:'USD',start:'2025-10-01',end:'2028-09-30',total:1800000,status:'Active'},
+  {id:'EDU1',name:'Girls Education',donor:'Foundation E',currency:'USD',start:'2026-01-01',end:'2028-12-31',total:2400000,status:'Active'},
+  {id:'EDU2',name:'School Retention',donor:'Corporate donor F',currency:'USD',start:'2026-03-01',end:'2027-02-28',total:650000,status:'Active'}];
 var LINES=[
   {id:'PER',name:'Personnel'},{id:'TRV',name:'Travel and transport'},{id:'SUP',name:'Supplies and equipment'},
   {id:'PTN',name:'Partner grants'},{id:'IND',name:'Indirect costs (10%)'}];
 var ROLES=[
-  {id:'cfl',name:'Country finance lead',hubs:['NBO','GRS','KSM'],edit:true,approve:true,salary:true,short:'Country lead'},
-  {id:'hfm',name:'Garissa hub finance manager',hubs:['GRS'],edit:true,approve:false,salary:true,short:'Garissa manager'},
-  {id:'pm',name:'Programme manager (read-only)',hubs:['NBO','GRS','KSM'],edit:false,approve:false,salary:false,short:'Programme manager'}];
+  {id:'cfl',name:'Country finance lead',hubs:['NBO','GRS','KSM'],edit:true,approve:true,salary:true,setup:true,short:'Country lead'},
+  {id:'hfm',name:'Garissa hub finance manager',hubs:['GRS'],edit:true,approve:false,salary:true,setup:false,short:'Garissa manager'},
+  {id:'pm',name:'Programme manager (read-only)',hubs:['NBO','GRS','KSM'],edit:false,approve:false,salary:false,setup:false,short:'Programme manager'}];
 var ACCT_NAME={'5100':'Salaries','5110':'Staff allowances','5200':'Travel and fuel','5300':'Supplies','5350':'Training costs','5400':'Equipment','5500':'Partner transfers','5900':'Indirect allocation'};
+/* each donor names the same five cost lines differently; the ledger accounts map to the line, the donor's name is what its reports use */
+var LNAME={
+  NUT2:{PER:'Salaries and benefits',TRV:'Travel and logistics',SUP:'Commodities and equipment',PTN:'Partner grants',IND:'Overhead (10%)'},
+  WSH1:{PER:'Staff costs',TRV:'Travel and field visits',SUP:'Materials and equipment',PTN:'Partner grants',IND:'Overhead (10%)'},
+  WSH2:{PER:'Programme personnel',TRV:'Transport',SUP:'Sanitation materials',PTN:'Implementing partners',IND:'Indirect costs (10%)'},
+  EDU1:{PER:'Programme staff',TRV:'Transport',SUP:'Learning materials and equipment',PTN:'Partner organisations',IND:'Indirect costs (10%)'},
+  EDU2:{PER:'Personnel',TRV:'Travel',SUP:'Supplies',PTN:'Sub-grants',IND:'Management fee (10%)'}};
+var THEMES=['Nutrition','Water and hygiene','Education'];
+/* An activity belongs to exactly one grant. The ledger carries an activity TYPE code that the whole organisation
+   shares, so the same code can appear under several grants. The grant code and the type code together identify the
+   activity record: two grants funding the same kind of work get two separate activities, never one merged one.
+   The theme is only a label for reporting across grants. The last number is a weight for the demo data. */
+var ACT_DEF=[
+  ['NUT1','A101','Community nutrition screening','Nutrition',4],['NUT1','A102','Therapeutic feeding centres','Nutrition',3],['NUT1','A103','Caregiver counselling and training','Nutrition',2],
+  ['NUT2','A101','Community nutrition screening','Nutrition',3],['NUT2','A104','Supply chain and cold chain','Nutrition',3],['NUT2','A105','Mobile outreach clinics','Nutrition',2],
+  ['WSH1','A201','Borehole rehabilitation','Water and hygiene',5],['WSH1','A202','Water point management committees','Water and hygiene',2],['WSH1','A203','Hygiene promotion','Water and hygiene',2],
+  ['WSH2','A204','School and clinic sanitation','Water and hygiene',4],['WSH2','A203','Hygiene promotion','Water and hygiene',2],['WSH2','A205','Handwashing stations','Water and hygiene',2],
+  ['EDU1','A301','Girls’ scholarships and bursaries','Education',4],['EDU1','A302','Safe school clubs','Education',2],['EDU1','A303','Teacher mentoring','Education',2],
+  ['EDU2','A303','Teacher mentoring','Education',2],['EDU2','A304','School feeding','Nutrition',4],['EDU2','A305','Learning materials','Education',2]];
+var ACTS=ACT_DEF.map(function(d){return{id:d[0]+'-'+d[1],grant:d[0],type:d[1],name:d[2],theme:d[3],status:'Active',budget:0,w:d[4]}});
 var hubName={},grantName={},lineName={};
 HUBS.forEach(function(h){hubName[h.id]=h.name});GRANTS.forEach(function(g){grantName[g.id]=g.name});LINES.forEach(function(l){lineName[l.id]=l.name});
+function lineLabel(g,l){return LNAME[g]&&LNAME[g][l]||lineName[l]}
+function grantById(id){return GRANTS.filter(function(g){return g.id===id})[0]}
+function actById(id){return ACTS.filter(function(a){return a.id===id})[0]}
+function actName(id){var a=actById(id);return a?a.name:''}
+function refreshNames(){GRANTS.forEach(function(g){grantName[g.id]=g.name})}
+function monthYear(d){var p=d.split('-');return MONTHS[Number(p[1])-1]+' '+p[0]}
+function spanText(g){return monthYear(g.start)+' to '+monthYear(g.end)}
+function validDate(d){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');if(!m)return false;var t=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return t.getFullYear()===Number(m[1])&&t.getMonth()===Number(m[2])-1&&t.getDate()===Number(m[3])}
+function nfmt(n){return Math.round(n).toLocaleString('en-US')}
 
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 var rnd=rng(2026);
+var rnd2=rng(7);
 function pad(n){return n<10?'0'+n:''+n}
 function spread(total){var q=Math.floor(total/12),a=[],i;for(i=0;i<12;i++)a.push(q);a[11]+=total-q*12;return a}
 function clone(o){return JSON.parse(JSON.stringify(o))}
@@ -267,21 +339,36 @@ function indirect(m){var a=[],i,cum=0,prev=0;for(i=0;i<12;i++){cum+=m.PER[i]+m.T
 function sum(a,n){if(!a)return 0;var s=0,i,e=n==null?12:n;for(i=0;i<e&&i<a.length;i++)s+=a[i];return s}
 
 var BASE={
-  'NUT|GRS':{PER:96000,TRV:30000,SUP:84000,PTN:48000},
-  'NUT|NBO':{PER:60000,TRV:14000,SUP:36000,PTN:30000},
-  'WSH|GRS':{PER:72000,TRV:24000,SUP:120000,PTN:36000},
-  'WSH|KSM':{PER:54000,TRV:18000,SUP:96000,PTN:24000},
-  'EDU|KSM':{PER:66000,TRV:20000,SUP:48000,PTN:40000},
-  'EDU|NBO':{PER:78000,TRV:16000,SUP:30000,PTN:36000}};
-/* BASE is the original size in USD; SCALE brings the demo to about USD 4.5 million (KES 590 million) a year */
-var SCALE=3.5;
+  'NUT1|GRS':{PER:165000,TRV:60000,SUP:170000,PTN:95000},
+  'NUT1|NBO':{PER:112000,TRV:30000,SUP:70000,PTN:60000},
+  'NUT2|NBO':{PER:78000,TRV:25000,SUP:60000,PTN:50000},
+  'NUT2|KSM':{PER:72000,TRV:30000,SUP:85000,PTN:45000},
+  'WSH1|GRS':{PER:160000,TRV:45000,SUP:230000,PTN:65000},
+  'WSH1|KSM':{PER:120000,TRV:35000,SUP:190000,PTN:45000},
+  'WSH2|GRS':{PER:72000,TRV:25000,SUP:110000,PTN:35000},
+  'WSH2|NBO':{PER:65000,TRV:20000,SUP:80000,PTN:30000},
+  'EDU1|NBO':{PER:150000,TRV:30000,SUP:55000,PTN:65000},
+  'EDU1|KSM':{PER:136000,TRV:35000,SUP:85000,PTN:70000},
+  'EDU2|KSM':{PER:80000,TRV:25000,SUP:60000,PTN:45000},
+  'EDU2|GRS':{PER:70000,TRV:22000,SUP:50000,PTN:38000}};
+/* BASE is in USD a year; SCALE brings the demo to about USD 4.5 million (KES 590 million) a year across six grants */
+var SCALE=1.15;
 var B={};
 Object.keys(BASE).forEach(function(k){
   var m={};['PER','TRV','SUP','PTN'].forEach(function(l){m[l]=spread(Math.round(BASE[k][l]*SCALE))});m.IND=indirect(m);
   B[k]={approved:m,draft:clone(m),status:'approved',version:2};
 });
+/* each grant's planning budget for its activities is shared out by weight over its non-staff budget lines */
+(function(){
+  GRANTS.forEach(function(g){
+    var list=ACTS.filter(function(a){return a.grant===g.id}),ns=0,tw=0,used=0;
+    Object.keys(B).forEach(function(k){if(k.split('|')[0]===g.id)['TRV','SUP','PTN'].forEach(function(l){ns+=sum(B[k].approved[l])})});
+    list.forEach(function(a){tw+=a.w});
+    list.forEach(function(a,i){a.budget=i===list.length-1?ns-used:Math.round(ns*a.w/tw/1000)*1000;used+=a.budget});
+  });
+})();
 /* how closely each cell follows its budget; anything missing runs at 96% */
-var F={'NUT|GRS|SUP':1.18,'NUT|GRS|PER':1.02,'WSH|GRS|TRV':0.5,'WSH|KSM|SUP':1.12,'EDU|KSM|PTN':0.35,'EDU|NBO|PER':1.04,'NUT|NBO|PTN':0.8};
+var F={'NUT1|GRS|SUP':1.18,'NUT1|GRS|PER':1.02,'WSH1|GRS|TRV':0.5,'WSH1|KSM|SUP':1.12,'EDU1|KSM|PTN':0.35,'EDU1|NBO|PER':1.04,'NUT1|NBO|PTN':0.8,'NUT2|NBO|SUP':0.82,'EDU2|GRS|PTN':0.55};
 function fac(k){return F[k]!=null?F[k]:0.96}
 var DESCR={
   '5100':['Salaries, programme staff'],
@@ -298,7 +385,18 @@ var ACC={PER:[['5100',.88],['5110',.12]],TRV:[['5200',1]],SUP:[['5300',.7],['540
 var DIM=[31,28,31,30,31,30,31,31,30,31,30,31];
 var raw=[];
 function pick(a){return a[Math.floor(rnd()*a.length)]}
-function describe(acct,g){var d=DESCR[acct];return pick(Array.isArray(d)?d:d[g])}
+var GRANT_DESC={NUT1:'NUT',NUT2:'NUT',WSH1:'WSH',WSH2:'WSH',EDU1:'EDU',EDU2:'EDU'};
+function describe(acct,g){var d=DESCR[acct];return pick(Array.isArray(d)?d:d[GRANT_DESC[g]||'NUT'])}
+/* most postings carry the type code of one of the grant's activities (weighted); a few carry no code, a retired code,
+   or a type this grant does not fund */
+function actFor(g){
+  var r=rnd2();if(r<0.03)return'';if(r<0.05)return'A199';
+  var mine=ACTS.filter(function(a){return a.grant===g&&a.status==='Active'});
+  if(r<0.07){var types=mine.map(function(a){return a.type}),other=ACTS.filter(function(a){return types.indexOf(a.type)<0});return other[Math.floor(rnd2()*other.length)].type}
+  var tw=mine.reduce(function(t,a){return t+a.w},0),x=rnd2()*tw,i;
+  for(i=0;i<mine.length;i++){x-=mine[i].w;if(x<=0)return mine[i].type}
+  return mine[mine.length-1].type;
+}
 /* split a total into n positive amounts that add up exactly, in whole tens of shillings */
 function parts(total,n){
   var w=[],s=0,i,out=[],used=0;
@@ -319,25 +417,25 @@ function parts(total,n){
           direct+=kes;
           parts(kes,n).forEach(function(part){
             var day=(l==='PER'&&m<10)?28:(m===10?2+Math.floor(rnd()*16):3+Math.floor(rnd()*22));
-            raw.push({m:m,day:day,acct:a[0],cc:h,grant:g,kes:part,desc:describe(a[0],g),line:l});
+            raw.push({m:m,day:day,acct:a[0],cc:h,grant:g,kes:part,desc:describe(a[0],g),line:l,act:a[0]==='5100'||a[0]==='5110'?'':actFor(g)});
           });
         });
       });
       var ind=Math.round(direct*0.1/10)*10;
-      raw.push({m:m,day:m===10?18:29,acct:'5900',cc:h,grant:g,kes:ind,desc:'Indirect cost allocation, 10%',line:'IND'});
+      raw.push({m:m,day:m===10?18:29,acct:'5900',cc:h,grant:g,kes:ind,desc:'Indirect cost allocation, 10%',line:'IND',act:''});
     });
   }
   /* entries that cannot be mapped yet: an account with no budget line, a missing grant code, and a retired grant code */
-  [[2,10,'5350','GRS','WSH',640000,'Staff training workshop'],[3,12,'5350','GRS','WSH',720000,'Staff training workshop'],
-   [4,22,'5350','GRS','WSH',560000,'Community trainer fees'],[5,14,'5350','GRS','WSH',880000,'Staff training workshop'],
-   [6,25,'5350','GRS','WSH',610000,'Community trainer fees'],[7,9,'5350','GRS','WSH',600000,'Community trainer fees'],
-   [8,21,'5350','GRS','WSH',1040000,'Staff training workshop'],[9,17,'5350','GRS','WSH',770000,'Staff training workshop'],
+  [[2,10,'5350','GRS','WSH1',640000,'Staff training workshop'],[3,12,'5350','GRS','WSH1',720000,'Staff training workshop'],
+   [4,22,'5350','GRS','WSH1',560000,'Community trainer fees'],[5,14,'5350','GRS','WSH1',880000,'Staff training workshop'],
+   [6,25,'5350','GRS','WSH1',610000,'Community trainer fees'],[7,9,'5350','GRS','WSH1',600000,'Community trainer fees'],
+   [8,21,'5350','GRS','WSH1',1040000,'Staff training workshop'],[9,17,'5350','GRS','WSH1',770000,'Staff training workshop'],
    [3,6,'5200','KSM','',310000,'Field travel and fuel'],[5,19,'5200','KSM','',260000,'Field travel and fuel'],
    [6,17,'5200','KSM','',380000,'Field travel and fuel'],[7,24,'5200','KSM','',420000,'Vehicle hire, Kisumu'],
    [8,11,'5200','KSM','',256000,'Field travel and fuel'],[9,23,'5200','KSM','',472000,'Vehicle hire, Kisumu'],
    [3,5,'5300','NBO','NUT-OLD',980000,'Therapeutic food and supplements'],[4,8,'5300','NBO','NUT-OLD',1240000,'Therapeutic food and supplements'],
    [6,26,'5300','NBO','NUT-OLD',860000,'Micronutrient supplements'],[9,15,'5300','NBO','NUT-OLD',1100000,'Therapeutic food and supplements']
-  ].forEach(function(x){raw.push({m:x[0],day:x[1],acct:x[2],cc:x[3],grant:x[4],kes:x[5],desc:x[6],line:null})});
+  ].forEach(function(x){raw.push({m:x[0],day:x[1],acct:x[2],cc:x[3],grant:x[4],kes:x[5],desc:x[6],line:null,act:''})});
   raw.sort(function(a,b){return a.m-b.m||a.day-b.day});
   raw.forEach(function(e,i){
     e.day=Math.min(e.day,DIM[e.m-1]);                      /* never a date that does not exist */
@@ -348,46 +446,99 @@ function parts(total,n){
   });
 })();
 var entries=raw;
-var POS=[
-  {id:'PO-26-0412',vendor:'Synthetic Medical Supplies Ltd',g:'NUT',h:'GRS',l:'SUP',kes:13650000,m:8},
-  {id:'PO-26-0418',vendor:'Synthetic Logistics Ltd',g:'NUT',h:'GRS',l:'TRV',kes:1470000,m:9},
-  {id:'PO-26-0377',vendor:'Synthetic Pumps and Pipes',g:'WSH',h:'GRS',l:'SUP',kes:9100000,m:7},
-  {id:'PO-26-0391',vendor:'Synthetic Pumps and Pipes',g:'WSH',h:'KSM',l:'SUP',kes:10850000,m:8},
-  {id:'PO-26-0405',vendor:'Synthetic Partner Fund Transfer',g:'WSH',h:'KSM',l:'PTN',kes:2275000,m:9},
-  {id:'PO-26-0366',vendor:'Synthetic Stationers',g:'EDU',h:'KSM',l:'SUP',kes:2730000,m:6},
-  {id:'PO-26-0420',vendor:'Synthetic Learning Materials',g:'EDU',h:'NBO',l:'SUP',kes:3185000,m:9},
-  {id:'PO-26-0398',vendor:'Synthetic Partner Fund Transfer',g:'EDU',h:'NBO',l:'PTN',kes:4550000,m:8},
-  {id:'PO-26-0381',vendor:'Synthetic Logistics Ltd',g:'NUT',h:'NBO',l:'SUP',kes:1960000,m:7},
-  {id:'PO-26-0409',vendor:'Synthetic Vehicle Hire',g:'EDU',h:'KSM',l:'TRV',kes:1155000,m:9},
-  {id:'PO-26-0424',vendor:'Synthetic Partner Fund Transfer',g:'NUT',h:'GRS',l:'PTN',kes:2400000,m:9},
-  {id:'PO-26-0425',vendor:'Synthetic Vehicle Hire',g:'NUT',h:'NBO',l:'TRV',kes:640000,m:8},
-  {id:'PO-26-0426',vendor:'Synthetic Partner Fund Transfer',g:'NUT',h:'NBO',l:'PTN',kes:1800000,m:9},
-  {id:'PO-26-0427',vendor:'Synthetic Logistics Ltd',g:'WSH',h:'GRS',l:'TRV',kes:520000,m:8},
-  {id:'PO-26-0428',vendor:'Synthetic Partner Fund Transfer',g:'WSH',h:'GRS',l:'PTN',kes:3200000,m:9},
-  {id:'PO-26-0429',vendor:'Synthetic Vehicle Hire',g:'WSH',h:'KSM',l:'TRV',kes:760000,m:9},
-  {id:'PO-26-0430',vendor:'Synthetic Partner Fund Transfer',g:'EDU',h:'KSM',l:'PTN',kes:2100000,m:7},
-  {id:'PO-26-0431',vendor:'Synthetic Logistics Ltd',g:'EDU',h:'NBO',l:'TRV',kes:480000,m:8},
-  {id:'PO-26-0432',vendor:'Synthetic Borehole Drilling Ltd',g:'WSH',h:'GRS',l:'SUP',kes:4100000,m:9},
-  {id:'PO-26-0433',vendor:'Synthetic Learning Materials',g:'EDU',h:'NBO',l:'SUP',kes:1600000,m:8},
-  {id:'PO-26-0434',vendor:'Synthetic Medical Supplies Ltd',g:'NUT',h:'NBO',l:'SUP',kes:1250000,m:9}];
+var POS=[];
+(function(){
+  var seq=0,big={'NUT1|GRS|SUP':0.36,'WSH1|KSM|SUP':0.30};
+  var vend={SUP:{NUT:['Synthetic Medical Supplies Ltd'],WSH:['Synthetic Pumps and Pipes','Synthetic Borehole Drilling Ltd'],EDU:['Synthetic Learning Materials','Synthetic Stationers']},TRV:['Synthetic Logistics Ltd','Synthetic Vehicle Hire'],PTN:['Synthetic Partner Fund Transfer']};
+  Object.keys(B).forEach(function(key){
+    var g=key.split('|')[0],h=key.split('|')[1];
+    ['SUP','TRV','PTN'].forEach(function(l){
+      var annual=sum(B[key].approved[l])*FX,n=1+(rnd2()<0.35?1:0),i;
+      for(i=0;i<n;i++){
+        var pct=(i===0&&big[key+'|'+l])||(0.04+rnd2()*0.09),vs=l==='SUP'?vend.SUP[GRANT_DESC[g]]:vend[l];
+        seq++;POS.push({id:'PO-26-'+(400+seq),vendor:vs[Math.floor(rnd2()*vs.length)],g:g,h:h,l:l,kes:Math.round(annual*pct/10000)*10000,m:6+Math.floor(rnd2()*4)});
+      }
+    });
+  });
+})();
 
-/* ---------- mapping ---------- */
-var acctMap={'5100':'PER','5110':'PER','5200':'TRV','5300':'SUP','5400':'SUP','5500':'PTN','5900':'IND'};
-var ccMap={NBO:'NBO',GRS:'GRS',KSM:'KSM'};
-var grantMap={NUT:'NUT',WSH:'WSH',EDU:'EDU'};
-var added={acct:{},grant:{}};
+/* ---------- staff: invented names; salaries in KES a month ----------
+   Each position is funded by one or several sources as a percent of time, with dates.
+   'CORE' is the organisation's own unrestricted money. */
+var SALSCALE=1.3;
+var FIRST=['Amina','Peter','Grace','Joseph','Fatuma','David','Mercy','Samuel','Halima','Brian','Esther','Hassan','Lucy','Kevin','Naomi','Daniel','Faith','Ahmed','Beatrice','Collins','Dorcas','Isaac','Janet','Moses','Rose','Stephen','Tabitha','Victor','Winnie','Yusuf'];
+var LAST=['Mwangi','Otieno','Wanjiru','Kiprop','Ali','Omondi','Achieng','Kamau','Abdi','Njoroge','Chebet','Hussein','Muthoni','Odhiambo','Wafula','Barasa','Nyambura','Mohamed','Akinyi','Kipchoge'];
+var STAFF_T={
+  NBO:[['Country finance lead','Support',780,[['CORE',40],['NUT1',15],['NUT2',15],['WSH2',15],['EDU1',15]]],['Finance officer','Support',250,[['NUT1',25],['NUT2',25],['WSH2',25],['EDU1',25]]],['Finance officer','Support',250,[['NUT1',25],['NUT2',25],['WSH2',25],['EDU1',25]]],
+       ['MEAL officer','Support',300,[['NUT1',25],['NUT2',25],['WSH2',25],['EDU1',25]]],['Nutrition technical advisor','Programme',620,[['NUT1',50],['NUT2',50]]],['Nutrition officer','Programme',270,[['NUT1',100]]],['Nutrition officer','Programme',270,[['NUT2',100]]],
+       ['WASH officer','Programme',300,[['WSH2',100]]],['Education programme manager','Programme',600,[['EDU1',100]]],['Education officer','Programme',280,[['EDU1',100]]],['Education officer','Programme',280,[['EDU1',100]]],['Safeguarding officer','Support',330,[['CORE',100]]]],
+  GRS:[['Hub finance manager','Support',520,[['CORE',30],['NUT1',20],['WSH1',20],['WSH2',15],['EDU2',15]]],['Finance officer','Support',240,[['NUT1',25],['WSH1',25],['WSH2',25],['EDU2',25]]],['Logistics officer','Support',210,[['NUT1',25],['WSH1',25],['WSH2',25],['EDU2',25]]],
+       ['Driver','Support',85,[['NUT1',50],['WSH1',50]]],['Driver','Support',85,[['WSH2',50],['EDU2',50]]],['Nutrition programme manager','Programme',560,[['NUT1',100]]],['Nutrition officer','Programme',260,[['NUT1',100]]],['Nutrition officer','Programme',260,[['NUT1',100]]],
+       ['Nutrition assistant','Programme',150,[['NUT1',90]]],['Nutrition assistant','Programme',150,[['NUT1',100]]],['WASH engineer','Programme',480,[['WSH1',100]]],['Hygiene promotion officer','Programme',250,[['WSH1',50],['WSH2',50]]],
+       ['Hygiene promotion officer','Programme',250,[['WSH2',100]]],['School feeding officer','Programme',240,[['EDU2',100]]]],
+  KSM:[['Hub finance manager','Support',520,[['CORE',30],['NUT2',15],['WSH1',20],['EDU1',20],['EDU2',15]]],['Finance officer','Support',240,[['NUT2',25],['WSH1',25],['EDU1',25],['EDU2',25]]],['Logistics officer','Support',210,[['NUT2',25],['WSH1',25],['EDU1',25],['EDU2',25]]],
+       ['Driver','Support',85,[['WSH1',50],['EDU1',50]]],['WASH programme manager','Programme',540,[['WSH1',100]]],['WASH engineer','Programme',470,[['WSH1',100]]],['WASH engineer','Programme',470,[['WSH1',100]]],
+       ['Community mobilisation officer','Programme',230,[['WSH1',100]]],['Community mobilisation officer','Programme',230,[['WSH1',100]]],['Education officer','Programme',280,[['EDU1',100]]],['Education officer','Programme',280,[['EDU1',100]]],
+       ['Teacher mentor','Programme',220,[['EDU1',100]]],['Teacher mentor','Programme',220,[['EDU1',60],['EDU2',50]]],['Teacher mentor','Programme',220,[['EDU2',100]]],['Nutrition officer','Programme',270,[['NUT2',100]]]]};
+var POSITIONS=[];
+(function(){
+  var n=0,starts=['2025-01-01','2025-04-01','2025-07-01'];
+  HUBS.forEach(function(h){STAFF_T[h.id].forEach(function(t){
+    n++;
+    POSITIONS.push({no:'E-'+(1000+n),name:FIRST[n%30]+' '+LAST[(n*7)%20],title:t[0],type:t[1],hub:h.id,salary:Math.round(t[2]*1000*SALSCALE/5000)*5000,
+      start:starts[n%3],end:'',status:'Active',splits:t[3].map(function(x){return{src:x[0],pct:x[1],from:'',to:''}})});
+  })});
+  function byTitle(hub,title,k){return POSITIONS.filter(function(x){return x.hub===hub&&x.title===title})[k||0]}
+  /* a position that moved from one grant to another on 1 October */
+  var mob=byTitle('KSM','Community mobilisation officer',1);
+  mob.splits=[{src:'WSH1',pct:100,from:'',to:'2026-09-30'},{src:'EDU2',pct:100,from:'2026-10-01',to:''}];
+  /* two holders who left, each replaced by a new holder from the next day */
+  [['NBO','Education officer',0,'2026-06-30','2026-07-01'],['KSM','WASH engineer',1,'2026-08-31','2026-09-01']].forEach(function(x){
+    var old=byTitle(x[0],x[1],x[2]),k=POSITIONS.length+1;
+    old.end=x[3];old.status='Ended';
+    POSITIONS.push({no:'E-'+(1000+k),name:FIRST[(k+11)%30]+' '+LAST[(k*7+3)%20],title:old.title,type:old.type,hub:old.hub,salary:Math.round(old.salary*1.05/5000)*5000,start:x[4],end:'',status:'Active',
+      splits:old.splits.map(function(sp){return{src:sp.src,pct:sp.pct,from:'',to:''}})});
+  });
+})();
+
+/* ---------- mapping: rules ----------
+   A rule says: when an entry has these values, set this target to this value. The most
+   specific rule wins (most conditions), then priority. Two rules of equal strength that
+   disagree make the entry a clash, and it waits in Needs attention. */
+var FIELD_LABEL={acct:'Account',cc:'Cost centre',grant:'Grant code',act:'Activity code'};
+var TARGET_LABEL={grant:'Funding source',hub:'Hub',line:'Budget line',act:'Activity'};
+var RULES=[],RSV=1,ruleSeq=0;
+function addRuleRaw(target,when,value,prio,by,note){ruleSeq++;var r={id:'R-'+('00'+ruleSeq).slice(-3),target:target,when:when,value:value,prio:prio||0,by:by||'Base set',note:note||''};RULES.push(r);return r}
+[['5100','PER'],['5110','PER'],['5200','TRV'],['5300','SUP'],['5400','SUP'],['5500','PTN'],['5900','IND']].forEach(function(x){addRuleRaw('line',[{f:'acct',v:x[0]}],x[1])});
+HUBS.forEach(function(h){addRuleRaw('hub',[{f:'cc',v:h.id}],h.id)});
+GRANTS.forEach(function(g){addRuleRaw('grant',[{f:'grant',v:g.id}],g.id)});
+ACTS.forEach(function(a){addRuleRaw('act',[{f:'act',v:a.type},{f:'grant',v:a.grant}],a.id)});
 var over={};
 var A={},Cm={},unm=[];
-function mapEntry(e){
-  if(over[e.id])return over[e.id];
-  var hub=ccMap[e.cc];
-  if(!hub)return{ok:false,reason:'Cost centre not recognised',need:'hub'};
+function fieldVal(e,f){return f==='acct'?e.acct:f==='cc'?e.cc:f==='grant'?(e.grant||''):f==='act'?(e.act||''):''}
+function ruleMatches(r,e){return r.when.every(function(c){return fieldVal(e,c.f)===c.v})}
+function resolve(e,target,rules){
+  var hits=(rules||RULES).filter(function(r){return r.target===target&&ruleMatches(r,e)});
+  if(!hits.length)return{value:'',rule:null,clash:false};
+  var best=-1e9,top=[];
+  hits.forEach(function(r){var sc=r.when.length*1000+r.prio;if(sc>best){best=sc;top=[r]}else if(sc===best)top.push(r)});
+  var vals={};top.forEach(function(r){vals[r.value]=1});
+  if(Object.keys(vals).length>1)return{value:'',rule:null,clash:true,rules:top};
+  return{value:top[0].value,rule:top[0],clash:false};
+}
+function entryById(id){for(var i=0;i<entries.length;i++)if(entries[i].id===id)return entries[i]}
+function hubForEntry(e){return resolve(e,'hub').value}
+function mapEntry(e,rules){
+  var rh=resolve(e,'hub',rules),rg=resolve(e,'grant',rules),rl=resolve(e,'line',rules),ra=resolve(e,'act',rules);
+  if(over[e.id]){
+    var o=over[e.id],g=o.grant||rg.value,hb=o.hub||rh.value,ln=o.line||rl.value;
+    if(g&&hb&&ln)return{ok:true,grant:g,hub:hb,line:ln,act:ra.value,over:true};
+  }
+  if(!rh.value)return{ok:false,reason:rh.clash?'Rules clash for cost centre '+e.cc:'Cost centre not recognised',need:'hub'};
   if(!e.grant)return{ok:false,reason:'No grant code on the entry',need:'grant',blank:true};
-  var grant=grantMap[e.grant];
-  if(!grant)return{ok:false,reason:'Grant code '+e.grant+' not recognised',need:'grant'};
-  var line=acctMap[e.acct];
-  if(!line)return{ok:false,reason:'Account '+e.acct+' has no budget line',need:'line'};
-  return{ok:true,grant:grant,hub:hub,line:line};
+  if(!rg.value)return{ok:false,reason:rg.clash?'Rules clash for grant code '+e.grant:'Grant code '+e.grant+' not recognised',need:'grant'};
+  if(!rl.value)return{ok:false,reason:rl.clash?'Rules clash for account '+e.acct:'Account '+e.acct+' has no budget line',need:'line'};
+  return{ok:true,grant:rg.value,hub:rh.value,line:rl.value,act:ra.value};
 }
 function recompute(){
   A={};Cm={};unm=[];
@@ -401,8 +552,8 @@ function recompute(){
 
 /* ---------- state ---------- */
 var S={view:'bva',role:'cfl',scope:'',grant:'',mode:'grant',period:CLOSED,cur:'USD',theme:'light',offline:false,
-  open:{},openFor:'',drawer:null,ledgerSrc:'bc',bg:'NUT',bh:'GRS',compare:false,paste:false,pasteText:'',pasteMsg:'',
-  queue:{},log:[],csv:null,rowF:{}};
+  open:{},openFor:'',drawer:null,ledgerSrc:'bc',bg:'NUT1',bh:'GRS',compare:false,paste:false,pasteText:'',pasteMsg:'',
+  queue:{},log:[],csv:null,rowF:{},mt:'attention',fs:'NUT1',ft:'lines',rb:{target:'line',conds:[{f:'acct',v:''}],value:'',prio:0},rm:'',mx:null,sp:{},msg:{},staffSel:''};
 function role(){return ROLES.filter(function(r){return r.id===S.role})[0]}
 function hubOK(h){return role().hubs.indexOf(h)>-1&&(!S.scope||S.scope===h)}
 function roleHubOK(h){return role().hubs.indexOf(h)>-1}
@@ -441,16 +592,19 @@ function status(x){
 }
 
 /* ---------- chrome ---------- */
-var VIEWS=[['bva','Budget vs actual'],['budgets','Budgets'],['ledger','Ledger intake'],['maps','Mappings']];
+var NAV=[['Work',[['bva','Budget vs actual'],['budgets','Budgets'],['ledger','Ledger intake']]],['Setup',[['funding','Funding sources'],['staff','Staff and funding'],['maps','Mappings']]]];
+var VIEW_IDS=['bva','budgets','ledger','funding','staff','maps'];
 function chrome(){
   $('role').innerHTML=ROLES.map(function(r){return'<option value="'+r.id+'"'+(r.id===S.role?' selected':'')+'>'+esc(r.name)+'</option>'}).join('');
   ['USD','KES'].forEach(function(c){$('cur-'+c).setAttribute('aria-pressed',S.cur===c)});
   $('th-light').setAttribute('aria-pressed',S.theme==='light');$('th-dark').setAttribute('aria-pressed',S.theme==='dark');
   $('net-on').setAttribute('aria-pressed',!S.offline);$('net-off').setAttribute('aria-pressed',S.offline);
-  var rail=VIEWS.map(function(v){
-    var b=v[0]==='maps'&&unm.length?'<span class="badge" aria-label="'+unm.length+' entries need a mapping">'+unm.length+'</span>':'';
+  var rail=NAV.map(function(grp){return'<h6>'+grp[0]+'</h6>'+grp[1].map(function(v){
+    var b='';
+    if(v[0]==='maps'&&unm.length)b='<span class="badge" aria-label="'+unm.length+' entries need a mapping">'+unm.length+'</span>';
+    if(v[0]==='staff'){var n=staffIssueCount();if(n)b='<span class="badge w" aria-label="'+n+' positions need their funding fixed">'+n+'</span>'}
     return'<button type="button" data-act="nav" data-arg="'+v[0]+'"'+(S.view===v[0]?' aria-current="page"':'')+'>'+v[1]+b+'</button>';
-  }).join('');
+  }).join('')}).join('');
   rail+='<h6>Later phases</h6><div class="later">Forecast and alerts</div><div class="later">Funding gap</div><div class="later">Timesheets and staffing</div><div class="later">Donor reports</div>';
   $('rail').innerHTML=rail;
   var bn='';
@@ -470,7 +624,7 @@ function renderBVA(){
   var scopeOpts='<option value="">Country office, all hubs</option>'+HUBS.filter(function(h){return roleHubOK(h.id)}).map(function(h){return'<option value="'+h.id+'"'+(S.scope===h.id?' selected':'')+'>'+h.name+' hub</option>'}).join('');
   var grantOpts='<option value="">All grants</option>'+GRANTS.map(function(g){return'<option value="'+g.id+'"'+(S.grant===g.id?' selected':'')+'>'+g.name+'</option>'}).join('');
   var perOpts=MONTHS.slice(0,10).map(function(m,i){return'<option value="'+(i+1)+'"'+(S.period===i+1?' selected':'')+'>'+(i+1<=CLOSED?'To end of '+m+' (closed)':'To '+m+' (open, partial)')+'</option>'}).join('');
-  var uk=unm.filter(function(e){return e.m<=P&&roleHubOK(ccMap[e.cc])&&(!S.scope||ccMap[e.cc]===S.scope)});
+  var uk=unm.filter(function(e){var hb=hubForEntry(e);return e.m<=P&&hb&&roleHubOK(hb)&&(!S.scope||hb===S.scope)});
   var ukSum=uk.reduce(function(s,e){return s+e.kes},0);
   var h='<h1>Budget vs actual</h1><p class="lede">Approved budgets against mapped ledger spend and open commitments, for the year to the period you choose. Click any figure row to see the ledger entries behind it.</p>';
   if(uk.length)h+='<div class="banner info" role="status"><span><b>'+uk.length+' ledger entries (KES '+kes(ukSum)+') are not mapped yet</b> and are left out of these totals.</span><button class="btn" type="button" data-act="nav" data-arg="maps">Fix mappings</button></div>';
@@ -478,7 +632,7 @@ function renderBVA(){
      '<div class="field"><label for="f-grant">Grant</label><select id="f-grant" data-change="grant">'+grantOpts+'</select></div>'+
      '<div class="field"><label for="f-period">Period</label><select id="f-period" data-change="period">'+perOpts+'</select></div>'+
      '<div class="field"><label id="grpl">Group by</label><div class="seg" role="group" aria-labelledby="grpl">'+
-       [['grant','Grant'],['hub','Hub'],['line','Budget line']].map(function(m){return'<button type="button" data-act="mode" data-arg="'+m[0]+'" aria-pressed="'+(S.mode===m[0])+'">'+m[1]+'</button>'}).join('')+'</div></div></div>';
+       [['grant','Grant'],['hub','Hub'],['line','Budget line'],['theme','Theme']].map(function(m){return'<button type="button" data-act="mode" data-arg="'+m[0]+'" aria-pressed="'+(S.mode===m[0])+'">'+m[1]+'</button>'}).join('')+'</div></div></div>';
   h+='<div class="stats">'+
     stat('Annual budget',fmt(tot.b),'approved versions, FY2026')+
     stat('Actual to date',fmt(tot.a),tot.b?Math.round(tot.a/tot.b*100)+'% of annual budget':'')+
@@ -495,24 +649,58 @@ function stat(l,v,s){return'<div class="stat"><small>'+l+'</small><strong>'+v+'<
 var DIMS={grant:{list:GRANTS,key:'g'},hub:{list:HUBS,key:'h'},line:{list:LINES,key:'l'}};
 var ORDER={grant:['grant','line'],hub:['hub','grant'],line:['line','grant']};
 function table(base){
+  if(S.mode==='theme')return themeTable(base);
   var ord=ORDER[S.mode],d1=DIMS[ord[0]],d2=DIMS[ord[1]],rows='',P=S.period;
   S.rowF={};
   if(S.openFor!==S.mode){S.open={};S.openFor=S.mode;var fi=d1.list.filter(function(x){var ff=merge(base,d1.key,x.id);return agg(ff).b>0})[0];if(fi)S.open[ord[0]+':'+fi.id]=true}
   d1.list.forEach(function(x){
     var f1=merge(base,d1.key,x.id),a1=agg(f1);if(a1.b===0)return;
     var key1=ord[0]+':'+x.id,open=!!S.open[key1];S.rowF[key1]={f:f1,title:label(ord[0],x.id)};
-    var meta=ord[0]==='grant'?'<small>'+esc(GRANTS.filter(function(g){return g.id===x.id})[0].donor)+' · '+GRANTS.filter(function(g){return g.id===x.id})[0].span+' · FY2026 slice</small>':'';
+    var meta=ord[0]==='grant'?'<small>'+esc(grantById(x.id).donor)+' · '+spanText(grantById(x.id))+' · FY2026 slice</small>':'';
     rows+='<tr class="l1">'+'<td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+key1+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(x.name)+'">'+(open?'▾':'▸')+'</button><div><button type="button" class="link" data-act="drill" data-arg="'+key1+'" style="text-decoration:none;color:inherit">'+esc(x.name)+'</button>'+meta+'</div></div></td>'+cells(a1)+'</tr>';
     if(open)d2.list.forEach(function(y){
       var f2=merge(f1,d2.key,y.id),a2=agg(f2);if(a2.b===0)return;
-      var key2=key1+'|'+ord[1]+':'+y.id;S.rowF[key2]={f:f2,title:label(ord[0],x.id)+' · '+label(ord[1],y.id)};
-      rows+='<tr class="l2"><td><button type="button" class="link" data-act="drill" data-arg="'+key2+'">'+esc(y.name)+'</button></td>'+cells(a2)+'</tr>';
+      var ylab=ord[0]==='grant'&&ord[1]==='line'?lineLabel(x.id,y.id):y.name;
+      var key2=key1+'|'+ord[1]+':'+y.id;S.rowF[key2]={f:f2,title:label(ord[0],x.id)+' · '+(ord[1]==='line'&&ord[0]==='grant'?ylab:label(ord[1],y.id))};
+      rows+='<tr class="l2"><td><button type="button" class="link" data-act="drill" data-arg="'+key2+'">'+esc(ylab)+'</button></td>'+cells(a2)+'</tr>';
     });
   });
   var t=agg(base);
   rows+='<tr class="tot"><td>Total</td>'+cells(t)+'</tr>';
   return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>'+({grant:'Grant',hub:'Hub',line:'Budget line'})[S.mode]+'</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
+/* the theme view: delivery costs by theme, with every grant's activities listed separately underneath */
+function tcells(plan,act,full,P){
+  if(!full)return'<td class="num">–</td><td class="num">'+fmt(act)+'</td><td class="num">–</td><td class="num">–</td><td></td><td></td>';
+  var x={b:plan,btd:plan*P/12,a:act,c:0,av:plan-act},st=status(x),pct=plan?Math.round(act/plan*100):0,pa=Math.min(100,plan?act/plan*100:0),pp=Math.min(100,P/12*100);
+  return'<td class="num">'+fmt(plan)+'</td><td class="num">'+fmt(act)+'</td><td class="num">–</td><td class="num'+(x.av<0?' neg':'')+'">'+fmt(x.av)+'</td>'+
+    '<td><div class="usedcell"><div class="bar'+(x.av<0?' over':'')+'" style="flex:1" title="'+pct+'% of the planning budget spent; '+Math.round(pp)+'% of the year has passed"><i class="a" style="width:'+pa+'%"></i><i class="p" style="left:calc('+pp+'% - 1px)"></i></div><span>'+pct+'%</span></div></td><td><span class="pill '+st[0]+'">'+st[1]+'</span></td>';
+}
+function themeTable(f){
+  var P=S.period,full=role().hubs.length===HUBS.length&&!S.scope,rows='',tp=0,ta=0,spend={},none=0;
+  if(S.openFor!==S.mode){S.open={};S.openFor=S.mode;S.open['theme:'+THEMES[0]]=true}
+  S.rowF={};
+  entries.forEach(function(e){
+    var m=e.map;if(!m.ok||e.m>P||!hubOK(m.hub)||(f.g&&m.grant!==f.g))return;
+    if(m.act)spend[m.act]=(spend[m.act]||0)+e.kes/FX;
+    else if(m.line!=='PER'&&m.line!=='IND')none+=e.kes/FX;
+  });
+  THEMES.forEach(function(th){
+    var list=ACTS.filter(function(a){return a.theme===th&&(!f.g||a.grant===f.g)});if(!list.length)return;
+    var plan=0,act=0,gs={};list.forEach(function(a){plan+=a.budget;act+=spend[a.id]||0;gs[a.grant]=1});tp+=plan;ta+=act;
+    var key='theme:'+th,open=!!S.open[key];
+    rows+='<tr class="l1"><td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+key+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(th)+'">'+(open?'▾':'▸')+'</button><div>'+esc(th)+'<small>'+list.length+' activities across '+Object.keys(gs).length+' grant'+(Object.keys(gs).length>1?'s':'')+'</small></div></div></td>'+tcells(plan,act,full,P)+'</tr>';
+    if(open)list.forEach(function(a){
+      var key2=key+'|act:'+a.id;S.rowF[key2]={f:{g:a.grant,act:a.id},title:a.name+' · '+grantName[a.grant]};
+      rows+='<tr class="l2"><td><button type="button" class="link" data-act="drill" data-arg="'+key2+'">'+esc(a.name)+'</button><div class="note">'+esc(grantName[a.grant])+' ('+esc(grantById(a.grant).donor)+') · type '+esc(a.type)+'</div></td>'+tcells(a.budget,spend[a.id]||0,full,P)+'</tr>';
+    });
+  });
+  if(none>0.5){rows+='<tr class="l2"><td>Not mapped to an activity<div class="note">non-staff entries with no activity code, or one the grant does not fund</div></td>'+tcells(0,none,false,P)+'</tr>';ta+=none}
+  rows+='<tr class="tot"><td>Total</td>'+tcells(tp,ta,full,P)+'</tr>';
+  return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>Theme and activity</th><th class="num">Planning budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0">An activity belongs to one grant, so the same kind of work funded by two donors appears as two separate rows, never one. The theme is only a label that groups them. Staff and indirect costs carry no activity and are not in this view.'+(full?'':' Planning budgets are set for the whole country office, so they are not shown for a single hub.')+'</p></div>';
+}
+
 function merge(f,key,val){var o={g:f.g,h:f.h,l:f.l};o[key]=val;return o}
 function label(dim,id){return dim==='grant'?grantName[id]:dim==='hub'?hubName[id]+' hub':lineName[id]}
 function cells(a){
@@ -558,22 +746,23 @@ function openDrawer(key){
 function renderDrawer(){
   var d=S.drawer,host=$('drawerHost');
   if(!d){host.innerHTML='';return}
+  if(d.kind){renderStaffDrawer(d,host);return}
   var f=d.f,P=S.period,list=[],pos=[];
   entries.forEach(function(e){
     var m=e.map;if(!m.ok||e.m>P)return;
-    if(f.g&&f.g!==m.grant)return;if(f.h&&f.h!==m.hub)return;if(f.l&&f.l!==m.line)return;if(!hubOK(m.hub))return;
+    if(f.g&&f.g!==m.grant)return;if(f.h&&f.h!==m.hub)return;if(f.l&&f.l!==m.line)return;if(f.act&&f.act!==m.act)return;if(!hubOK(m.hub))return;
     list.push(e);
   });
-  POS.forEach(function(p){if(p.m>P)return;if(f.g&&f.g!==p.g)return;if(f.h&&f.h!==p.h)return;if(f.l&&f.l!==p.l)return;if(!hubOK(p.h))return;pos.push(p)});
-  var a=agg(f),salaryHidden=!role().salary&&(!f.l||f.l==='PER');
+  POS.forEach(function(p){if(f.act||p.m>P)return;if(f.g&&f.g!==p.g)return;if(f.h&&f.h!==p.h)return;if(f.l&&f.l!==p.l)return;if(!hubOK(p.h))return;pos.push(p)});
+  var a=f.act?{b:actById(f.act).budget,a:list.reduce(function(t,e){return t+e.kes/FX},0),c:0}:agg(f),salaryHidden=!role().salary&&(!f.l||f.l==='PER');
   var LIMIT=250,shown=list.length>LIMIT?list.slice(list.length-LIMIT):list;
   var rows=shown.filter(function(e){return !(salaryHidden&&e.map.line==='PER')}).map(function(e){
-    return'<tr><td>'+dateLabel(e.date)+'</td><td class="mono">'+e.doc+'</td><td>'+esc(e.desc)+'<div class="note">'+esc(hubName[e.map.hub])+' · '+esc(lineName[e.map.line])+'</div></td><td class="mono">'+e.acct+'</td><td class="num">'+kes(e.kes)+'</td></tr>';
+    return'<tr><td>'+dateLabel(e.date)+'</td><td class="mono">'+e.doc+'</td><td>'+esc(e.desc)+'<div class="note">'+esc(hubName[e.map.hub])+' · '+esc(lineLabel(e.map.grant,e.map.line))+(e.map.act?' · '+esc(actName(e.map.act)):'')+'</div></td><td class="mono">'+e.acct+'</td><td class="num">'+kes(e.kes)+'</td></tr>';
   }).join('');
   var hid=list.length-list.filter(function(e){return !(salaryHidden&&e.map.line==='PER')}).length;
-  var prow=pos.map(function(p){return'<tr><td>'+MONTHS[p.m-1]+'</td><td class="mono">'+p.id+'</td><td>'+esc(p.vendor)+'<div class="note">'+esc(hubName[p.h])+' · '+esc(lineName[p.l])+'</div></td><td><span class="pill none">Open</span></td><td class="num">'+kes(p.kes)+'</td></tr>'}).join('');
+  var prow=pos.map(function(p){return'<tr><td>'+MONTHS[p.m-1]+'</td><td class="mono">'+p.id+'</td><td>'+esc(p.vendor)+'<div class="note">'+esc(hubName[p.h])+' · '+esc(lineLabel(p.g,p.l))+'</div></td><td><span class="pill none">Open</span></td><td class="num">'+kes(p.kes)+'</td></tr>'}).join('');
   var h='<div class="scrim" data-act="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dwt"><header><div style="flex:1;min-width:0"><div class="note">Ledger entries behind this figure</div><h2 id="dwt">'+esc(d.title)+'</h2></div><button class="x" type="button" data-act="close" aria-label="Close">✕</button></header><div class="body">'+
-   '<div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+stat('Budget',fmt(a.b),S.cur)+stat('Actual',fmt(a.a),S.cur)+stat('Committed',fmt(a.c),S.cur)+'</div>';
+   '<div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+(f.act?stat('Planning budget',fmt(a.b),S.cur)+stat('Actual',fmt(a.a),S.cur)+stat('Balance',fmt(a.b-a.a),S.cur):stat('Budget',fmt(a.b),S.cur)+stat('Actual',fmt(a.a),S.cur)+stat('Committed',fmt(a.c),S.cur))+'</div>';
   if(hid)h+='<div class="banner info">Salary detail is hidden for your role. '+hid+' payroll entries are counted in the totals but not listed.</div>';
   h+='<h2>Posted entries (KES)</h2>'+(rows?'<div class="scroll"><table class="st"><thead><tr><th>Date</th><th>Document</th><th>Description</th><th>Account</th><th class="num">KES</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">No posted entries for this selection up to the chosen period.</p>')+(list.length>LIMIT?'<p class="note">Showing the latest '+LIMIT+' of '+list.length.toLocaleString('en-US')+' entries. The totals above include all of them.</p>':'');
   h+='<h2 style="margin-top:18px">Open commitments (KES)</h2>'+(prow?'<div class="scroll"><table class="st"><thead><tr><th>Raised</th><th>Order</th><th>Supplier</th><th>Status</th><th class="num">KES</th></tr></thead><tbody>'+prow+'</tbody></table></div>':'<p class="muted">No open purchase orders for this selection.</p>');
@@ -598,19 +787,19 @@ function renderBudgets(){
   var gs=GRANTS.filter(function(g){return okKeys.some(function(x){return x.split('|')[0]===g.id})});
   var hs=HUBS.filter(function(h){return okKeys.indexOf(S.bg+'|'+h.id)>-1});
   var st=b.status;
-  var stPill=st==='approved'?'<span class="pill ok">Approved v'+b.version+'</span>':st==='draft'?'<span class="pill warn">Draft changes on v'+b.version+'</span>':'<span class="pill none">Submitted, waiting for review</span>';
+  var stPill=st==='approved'?'<span class="pill ok">Approved v'+b.version+'</span>':st==='draft'?'<span class="pill warn">'+(b.version?'Draft changes on v'+b.version:'New draft, not yet approved')+'</span>':'<span class="pill none">Submitted, waiting for review</span>';
   var h='<h1>Budgets</h1><p class="lede">Each hub keeps its own budget by line and month. Edit a figure directly, or paste rows from Excel. Changes stay in a draft until the country finance lead approves them, and only approved budgets feed budget vs actual.</p>';
   h+='<div class="row"><div class="field"><label for="b-grant">Grant</label><select id="b-grant" data-change="bgrant">'+gs.map(function(g){return'<option value="'+g.id+'"'+(S.bg===g.id?' selected':'')+'>'+g.name+'</option>'}).join('')+'</select></div>'+
     '<div class="field"><label for="b-hub">Hub</label><select id="b-hub" data-change="bhub">'+hs.map(function(x){return'<option value="'+x.id+'"'+(S.bh===x.id?' selected':'')+'>'+x.name+'</option>'}).join('')+'</select></div>'+
     '<div class="field"><label>Status</label><div style="min-height:34px;display:flex;align-items:center">'+stPill+'</div></div>'+
-    '<label style="display:flex;gap:6px;align-items:center;min-height:34px"><input type="checkbox" id="b-cmp" data-change="compare"'+(S.compare?' checked':'')+'> Highlight changes from approved v'+b.version+'</label></div>';
+    '<label style="display:flex;gap:6px;align-items:center;min-height:34px"><input type="checkbox" id="b-cmp" data-change="compare"'+(S.compare?' checked':'')+'> '+(b.version?'Highlight changes from approved v'+b.version:'Highlight what has been entered')+'</label></div>';
   if(!r.edit)h+='<div class="banner info">Your role can view budgets but not change them.</div>';
   else if(b.status==='submitted'&&!r.approve)h+='<div class="banner info">This budget is with the country finance lead for review, so editing is locked.</div>';
   h+='<div class="panel"><h2>'+esc(grantName[S.bg])+', '+esc(hubName[S.bh])+' hub, FY2026 (USD)</h2><div class="scroll"><table class="grid"><thead><tr><th>Budget line</th>'+MONTHS.map(function(m){return'<th>'+m+'</th>'}).join('')+'<th>Total</th></tr></thead><tbody>';
   ['PER','TRV','SUP','PTN'].forEach(function(l){
-    h+='<tr><th scope="row">'+lineName[l]+'</th>'+b.draft[l].map(function(v,i){return'<td><input class="cell" type="text" inputmode="numeric" id="c-'+l+'-'+i+'" data-input="cell" data-l="'+l+'" data-i="'+i+'" value="'+v+'" aria-label="'+lineName[l]+', '+MONTHS[i]+'"'+(edit?'':' disabled')+'></td>'}).join('')+'<td class="tot" id="t-'+l+'"></td></tr>';
+    h+='<tr><th scope="row">'+esc(lineLabel(S.bg,l))+'</th>'+b.draft[l].map(function(v,i){return'<td><input class="cell" type="text" inputmode="numeric" id="c-'+l+'-'+i+'" data-input="cell" data-l="'+l+'" data-i="'+i+'" value="'+v+'" aria-label="'+esc(lineLabel(S.bg,l))+', '+MONTHS[i]+'"'+(edit?'':' disabled')+'></td>'}).join('')+'<td class="tot" id="t-'+l+'"></td></tr>';
   });
-  h+='<tr><th scope="row">Indirect costs (10%, calculated)</th>'+MONTHS.map(function(m,i){return'<td class="calc" id="ind-'+i+'"></td>'}).join('')+'<td class="tot" id="t-IND"></td></tr>';
+  h+='<tr><th scope="row">'+esc(lineLabel(S.bg,'IND'))+', calculated</th>'+MONTHS.map(function(m,i){return'<td class="calc" id="ind-'+i+'"></td>'}).join('')+'<td class="tot" id="t-IND"></td></tr>';
   h+='<tr class="sum"><th scope="row">Total</th>'+MONTHS.map(function(m,i){return'<td class="calc" id="sum-'+i+'" style="font-weight:600;color:var(--ink)"></td>'}).join('')+'<td class="tot" id="t-ALL"></td></tr></tbody></table></div>';
   h+='<p class="note" id="deltaNote" style="margin:10px 0 0"></p>';
   h+='<div class="btns" style="margin-top:12px">';
@@ -659,7 +848,7 @@ function applyText(text){
   lines.forEach(function(ln){
     var cells=ln.indexOf('\t')>-1?ln.split('\t'):ln.split(',');
     var name=(cells[0]||'').toLowerCase(),id=null;
-    Object.keys(TOK).forEach(function(x){if(name.indexOf(TOK[x])>-1)id=x});
+    Object.keys(TOK).forEach(function(x){if(name.indexOf(TOK[x])>-1||name.indexOf(lineLabel(S.bg,x).toLowerCase().split(' ')[0])===0)id=x});
     var vals=cells.slice(1).map(parseNum).filter(function(v){return !isNaN(v)});
     if(!id||!vals.length){skip++;return}
     if(vals.length===1)d[id]=spread(vals[0]);
@@ -690,14 +879,14 @@ function renderLedger(){
     '<button class="btn" type="button" data-act="refresh"'+(S.offline?' disabled':'')+'>Refresh from ledger</button></div>'+
     '<p class="note" style="margin-top:0">'+(bc?'Columns follow the standard G/L Entry table. Only two dimensions sit on the entry itself; others come from the dimension set.':'Typical Agresso column names; they vary by installation and still need checking against a real export.')+'</p>';
   h+='<div class="scroll"><table class="st"><thead><tr>'+(bc?
-    '<th>Entry No.</th><th>Posting Date</th><th>Document No.</th><th>G/L Account No.</th><th>Description</th><th>Global Dim. 1</th><th>Global Dim. 2</th><th class="num">Amount (KES)</th><th>Source Code</th>':
-    '<th>voucher_no</th><th>voucher_type</th><th>period</th><th>trans_date</th><th>account</th><th>description</th><th>dim_1</th><th>dim_2</th><th class="num">amount</th><th>currency</th>')+
+    '<th>Entry No.</th><th>Posting Date</th><th>Document No.</th><th>G/L Account No.</th><th>Description</th><th>Global Dim. 1</th><th>Global Dim. 2</th><th>Dim. set: Activity</th><th class="num">Amount (KES)</th><th>Source Code</th>':
+    '<th>voucher_no</th><th>voucher_type</th><th>period</th><th>trans_date</th><th>account</th><th>description</th><th>dim_1</th><th>dim_2</th><th>dim_3</th><th class="num">amount</th><th>currency</th>')+
     '<th class="inm">In Mizani</th></tr></thead><tbody>'+
     recent.map(function(e){
-      var m=e.map,res=m.ok?'<span class="pill ok">'+esc(grantName[m.grant])+' · '+esc(hubName[m.hub])+' · '+esc(lineName[m.line])+'</span>':'<span class="pill fix">Needs a mapping</span>';
+      var m=e.map,res=m.ok?'<span class="pill ok">'+esc(grantName[m.grant])+' · '+esc(hubName[m.hub])+' · '+esc(lineLabel(m.grant,m.line))+'</span>':'<span class="pill fix">Needs a mapping</span>';
       return'<tr>'+(bc?
-        '<td class="mono">'+e.id+'</td><td class="mono">'+e.date+'</td><td class="mono">'+e.doc+'</td><td class="mono">'+e.acct+'</td><td>'+esc(e.desc)+'</td><td class="mono">'+e.cc+'</td><td class="mono">'+esc(e.grant)+'</td><td class="num">'+kes(e.kes)+'</td><td class="mono">'+e.src+'</td>':
-        '<td class="mono">V'+(4000000+e.id)+'</td><td class="mono">'+e.vt+'</td><td class="mono">2026'+pad(e.m)+'</td><td class="mono">'+e.date+'</td><td class="mono">'+e.acct+'</td><td>'+esc(e.desc)+'</td><td class="mono">'+e.cc+'</td><td class="mono">'+esc(e.grant)+'</td><td class="num">'+kes(e.kes)+'</td><td class="mono">KES</td>')+
+        '<td class="mono">'+e.id+'</td><td class="mono">'+e.date+'</td><td class="mono">'+e.doc+'</td><td class="mono">'+e.acct+'</td><td>'+esc(e.desc)+'</td><td class="mono">'+e.cc+'</td><td class="mono">'+esc(e.grant)+'</td><td class="mono">'+esc(e.act||'')+'</td><td class="num">'+kes(e.kes)+'</td><td class="mono">'+e.src+'</td>':
+        '<td class="mono">V'+(4000000+e.id)+'</td><td class="mono">'+e.vt+'</td><td class="mono">2026'+pad(e.m)+'</td><td class="mono">'+e.date+'</td><td class="mono">'+e.acct+'</td><td>'+esc(e.desc)+'</td><td class="mono">'+e.cc+'</td><td class="mono">'+esc(e.grant)+'</td><td class="mono">'+esc(e.act||'')+'</td><td class="num">'+kes(e.kes)+'</td><td class="mono">KES</td>')+
         '<td class="inm">'+res+'</td></tr>';
     }).join('')+'</tbody></table></div><p class="note" style="margin-bottom:0">Latest entries, plus any waiting for a mapping, of '+entries.length+' in all. Accounts, cost centres and grant codes are invented.</p></div>';
   h+='<div class="panel"><h2>Anything else: import a file</h2><p class="note" style="margin-top:0">For Sage, Sun, QuickBooks or a one-off extract, export the ledger as CSV with these columns: <span class="mono">entry_id, date, document_no, account, description, cost_centre, grant_code, amount, currency</span>. This prototype reads the header and counts rows; it does not add them to the demo data.</p>'+
@@ -710,38 +899,590 @@ function renderLedger(){
   return h;
 }
 
+/* ---------- setup helpers ---------- */
+function canSetup(){return !!role().setup&&!S.offline}
+function canHub(h){return !!role().edit&&!S.offline&&roleHubOK(h)}
+function ed(t,id,f,val,o){
+  o=o||{};var dis=!o.can||o.ro,cid='ed-'+t+'-'+String(id).replace(/[^A-Za-z0-9_-]/g,'_')+'-'+f;
+  var at=' id="'+cid+'" data-change="ed" data-t="'+t+'" data-id="'+esc(id)+'" data-f="'+f+'" aria-label="'+esc(o.label||f)+'"'+(dis?' disabled':'');
+  if(o.sel)return'<select class="ed"'+at+'>'+o.sel.map(function(x){return'<option value="'+esc(x[0])+'"'+(String(x[0])===String(val)?' selected':'')+'>'+esc(x[1])+'</option>'}).join('')+'</select>';
+  return'<input class="ed'+(o.num?' num':'')+'" type="'+(o.type||'text')+'"'+(o.num?' inputmode="numeric"':'')+' value="'+esc(val)+'"'+at+'>';
+}
+function msgBar(t){return S.msg[t]?'<p class="vmsg" role="alert">'+esc(S.msg[t])+'</p>':''}
+function recentChanges(){
+  return'<div class="panel"><h2>Recent changes</h2>'+(S.log.length?'<ul class="log">'+S.log.slice(-8).reverse().map(function(x){return'<li><span>'+x.t+'</span><span>'+esc(x.w)+'</span></li>'}).join('')+'</ul>':'<p class="muted" style="margin:0">Nothing changed yet in this session. Every change to setup data and mappings is recorded here with who and when.</p>')+'</div>';
+}
+function tabsBar(items,cur,key){
+  return'<div class="seg tabs" role="tablist">'+items.map(function(x){return'<button type="button" role="tab" data-act="tab" data-arg="'+key+':'+x[0]+'" aria-pressed="'+(cur===x[0])+'">'+x[1]+(x[2]!=null&&x[2]!==''?' ('+x[2]+')':'')+'</button>'}).join('')+'</div>';
+}
+function renderKeep(){
+  var a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;
+  render();
+  if(id){var n=$(id);if(n&&n.focus){n.focus();try{if(pos!=null&&n.setSelectionRange)n.setSelectionRange(pos,pos)}catch(e){}}}
+}
+function setupNote(can,who){
+  if(can)return'';
+  return'<div class="banner info">'+(S.offline?'Setup changes need a connection, so these tables are read-only while you are offline.':who||'Your role can read this but not change it.')+'</div>';
+}
+
+/* ---------- mapping helpers ---------- */
+function condText(r){return r.when.map(function(c){return FIELD_LABEL[c.f]+' = '+c.v}).join(' and ')}
+function valueLabel(t,v){return t==='grant'?(grantName[v]||v):t==='hub'?(hubName[v]?hubName[v]+' hub':v):t==='line'?(lineName[v]||v):(actName(v)||v)}
+function valueOptions(t){
+  return t==='grant'?GRANTS.map(function(g){return[g.id,g.name]}):t==='hub'?HUBS.map(function(h){return[h.id,h.name+' hub']}):
+    t==='line'?LINES.map(function(l){return[l.id,l.name]}):ACTS.map(function(a){return[a.id,a.name+' ('+(grantName[a.grant]||a.grant)+')']});
+}
+function seenValues(f){var m={};entries.forEach(function(e){var v=fieldVal(e,f);if(v)m[v]=1});return Object.keys(m).sort()}
+function mapLabel(m){return m.ok?(grantName[m.grant]+' · '+hubName[m.hub]+' · '+lineLabel(m.grant,m.line)+(m.act?' · '+actName(m.act):'')):'Needs a mapping ('+m.reason+')'}
+function sig(m){return m.ok?m.grant+'|'+m.hub+'|'+m.line+'|'+(m.act||''):'x'}
+function simulate(newRules,focus,withFocus){
+  var r={matched:0,decides:0,newly:0,changed:0,gone:0,clash:0,samples:[]};
+  entries.forEach(function(e){
+    var a=e.map,b=mapEntry(e,newRules);
+    if(focus&&ruleMatches(focus,e)){r.matched++;var w=resolve(e,focus.target,withFocus);if(w.rule&&w.rule===focus)r.decides++}
+    var kind='';
+    if(!a.ok&&b.ok)kind='newly';
+    else if(a.ok&&!b.ok)kind=/clash/.test(b.reason||'')?'clash':'gone';
+    else if(a.ok&&b.ok&&sig(a)!==sig(b))kind='changed';
+    if(kind){r[kind]++;if(r.samples.length<6)r.samples.push({e:e,a:a,b:b,kind:kind})}
+  });
+  return r;
+}
+function impactHtml(r){
+  var l=[];
+  l.push('<li><b>'+r.matched+'</b> ledger entries match this rule'+(r.matched?', and it decides the answer for <b>'+r.decides+'</b>'+(r.decides<r.matched?(r.clash?' (the rest tie with another rule of equal strength)':' (a stronger rule decides the rest)'):''):'')+'.</li>');
+  if(r.newly)l.push('<li><b>'+r.newly+'</b> entries that need a mapping would be mapped.</li>');
+  if(r.changed)l.push('<li><b>'+r.changed+'</b> entries that are already mapped would change.</li>');
+  if(r.gone)l.push('<li><b>'+r.gone+'</b> mapped entries would lose their mapping.</li>');
+  if(r.clash)l.push('<li class="neg"><b>'+r.clash+'</b> entries would clash with another rule of equal strength and need attention.</li>');
+  if(!r.newly&&!r.changed&&!r.gone&&!r.clash)l.push('<li>No existing mapping would change.</li>');
+  var smp=r.samples.length?'<div class="scroll" style="margin-top:8px"><table class="st" style="min-width:0"><thead><tr><th>Entry</th><th>Before</th><th>After</th></tr></thead><tbody>'+r.samples.map(function(x){
+    return'<tr><td class="mono">'+x.e.id+'<div class="note">'+esc(x.e.desc)+'</div></td><td>'+esc(mapLabel(x.a))+'</td><td>'+esc(mapLabel(x.b))+'</td></tr>'}).join('')+'</tbody></table></div>':'';
+  return'<div class="diff" role="status"><h3>Impact before you save</h3><ul>'+l.join('')+'</ul>'+smp+'</div>';
+}
+function applyRuleChange(adds,removes,what){
+  var before=unm.length;
+  RULES=RULES.filter(function(r){return removes.indexOf(r.id)<0});
+  adds.forEach(function(a){addRuleRaw(a.target,a.when,a.value,a.prio,'You, this session',a.note||'')});
+  RSV++;recompute();
+  var d=before-unm.length;
+  logIt(what+' (rule set v'+RSV+')');
+  toast(what+'. '+(d>0?d+' entries newly mapped.':d<0?(-d)+' entries now need a mapping.':'No entry changed status.'));
+}
+function ruleStats(){
+  var wins={};
+  entries.forEach(function(e){['hub','grant','line','act'].forEach(function(t){var r=resolve(e,t);if(r.rule)wins[r.rule.id]=(wins[r.rule.id]||0)+1})});
+  return wins;
+}
+function rmBar(){
+  if(!S.rm)return'';
+  var r=RULES.filter(function(x){return x.id===S.rm})[0];if(!r){S.rm='';return''}
+  var sim=simulate(RULES.filter(function(x){return x!==r}),r,RULES);
+  return'<div class="panel"><h2>Remove rule '+r.id+'?</h2><p class="note" style="margin-top:0">'+esc(TARGET_LABEL[r.target])+' = '+esc(valueLabel(r.target,r.value))+' when '+esc(condText(r))+'.</p>'+impactHtml(sim)+
+    '<div class="btns"><button class="btn primary" type="button" data-act="rmok">Remove rule, new rule set v'+(RSV+1)+'</button><button class="btn" type="button" data-act="rmcancel">Keep it</button></div></div>';
+}
+
+/* ---------- paste from Excel, shared by the setup screens ---------- */
+var IMP={};
+function gridRows(text){return text.split(/\r?\n/).filter(function(l){return l.trim()}).map(function(l){return(l.indexOf('\t')>-1?l.split('\t'):l.split(',')).map(function(c){return c.trim()})})}
+function runImport(key){
+  var d=IMP[key],rows=gridRows((S.sp[key]&&S.sp[key].text)||''),recs=[],errs=[],n=0;
+  rows.forEach(function(cells,i){
+    if(i===0&&d.header&&cells[0].toLowerCase()===d.header)return;
+    n++;
+    var r=d.parse(cells,recs);
+    if(r.err)errs.push({row:i+1,msg:r.err});else recs.push(r.rec);
+  });
+  return{recs:recs,errs:errs,rows:n};
+}
+function importPanel(key,can){
+  var d=IMP[key],sp=S.sp[key]||(S.sp[key]={open:false,text:'',res:null});
+  if(!can)return'';
+  if(!sp.open)return'<div class="btns" style="margin:0 0 14px"><button class="btn" type="button" data-act="spopen" data-arg="'+key+'">Paste from Excel</button></div>';
+  var res=sp.res,h='<div class="panel"><h2>'+d.title+'</h2><p class="note" style="margin-top:0">'+d.help+'</p>'+
+    '<textarea id="sp-'+key+'" data-input="sp" data-k="'+key+'" aria-label="Rows pasted from Excel" placeholder="'+esc(d.placeholder)+'">'+esc(sp.text)+'</textarea>'+
+    '<div class="btns" style="margin-top:8px"><button class="btn" type="button" data-act="spcheck" data-arg="'+key+'">Check rows</button>'+
+    '<button class="btn primary" type="button" data-act="spapply" data-arg="'+key+'"'+(res&&res.recs.length?'':' disabled')+'>Apply '+(res&&res.recs.length?res.recs.length+' valid row'+(res.recs.length>1?'s':''):'')+'</button>'+
+    '<button class="btn" type="button" data-act="spsample" data-arg="'+key+'">Fill with a sample</button><button class="btn" type="button" data-act="spclose" data-arg="'+key+'">Close</button></div>';
+  if(res){
+    h+='<p class="note" role="status" style="margin:10px 0 0"><b>'+res.rows+'</b> row'+(res.rows===1?'':'s')+' read: <b>'+res.recs.length+'</b> valid, <b>'+res.errs.length+'</b> with problems.</p>';
+    if(res.errs.length)h+='<div class="scroll"><table class="st" style="min-width:0;margin-top:6px"><thead><tr><th>Row</th><th>Problem</th></tr></thead><tbody>'+res.errs.map(function(x){return'<tr><td>'+x.row+'</td><td>'+esc(x.msg)+'</td></tr>'}).join('')+'</tbody></table></div>';
+  }
+  return h+'</div>';
+}
+(function(){
+  var KINDS={'cost centre':['cc','hub'],cc:['cc','hub'],'grant code':['grant','grant'],grant:['grant','grant'],'activity code':['act','act'],activity:['act','act'],act:['act','act']};
+  function findTarget(t,txt){
+    var low=txt.toLowerCase(),opts=valueOptions(t);
+    for(var i=0;i<opts.length;i++){var o=opts[i];if(String(o[0]).toLowerCase()===low||o[1].toLowerCase()===low||(t==='hub'&&o[1].toLowerCase().replace(/ hub$/,'')===low))return o[0]}
+    return'';
+  }
+  IMP.codes={
+    title:'Paste code mappings from Excel',header:'type',
+    help:'Three columns: the type of code (cost centre, grant code or activity code), the code as it appears in the ledger, and what it maps to. A hub or funding source can be given by code or name. An activity is given by its id, such as NUT1-A101, because several grants can have an activity of the same name. Each row becomes a rule; an activity rule also carries the activity’s grant.',
+    placeholder:'Cost centre\tMSA\tNBO',
+    sample:'type\tledger code\tmaps to\nCost centre\tMSA\tNBO\nGrant code\tNUT-OLD\tNUT1\nActivity code\tA199\tNUT1-A101\nCost centre\tGRS-2\tGarissa\nGrant code\tXYZ-1\tOutreach fund',
+    parse:function(c,recs){
+      var k=KINDS[(c[0]||'').toLowerCase()];if(!k)return{err:'The type "'+(c[0]||'')+'" is not one of cost centre, grant code or activity code.'};
+      if(!c[1])return{err:'The ledger code is empty.'};
+      var v=findTarget(k[1],c[2]||'');if(!v)return{err:'"'+(c[2]||'')+'" is not a known '+TARGET_LABEL[k[1]].toLowerCase()+'.'};
+      var when=[{f:k[0],v:c[1]}];if(k[1]==='act')when.push({f:'grant',v:actById(v).grant});
+      var dup=RULES.filter(function(r){return r.target===k[1]&&sameConds(r.when,when)})[0];
+      if(dup)return{err:FIELD_LABEL[k[0]]+' '+c[1]+(k[1]==='act'?' for that grant':'')+' is already mapped by rule '+dup.id+'. Remove that rule first to change it.'};
+      if(recs.some(function(r){return r.t===k[1]&&sameConds(r.when,when)}))return{err:FIELD_LABEL[k[0]]+' '+c[1]+' appears twice in what you pasted.'};
+      return{rec:{t:k[1],code:c[1],value:v,when:when}};
+    },
+    apply:function(recs){applyRuleChange(recs.map(function(r){return{target:r.t,when:r.when,value:r.value,note:'Pasted from Excel'}}),[],'imported '+recs.length+' code mapping'+(recs.length>1?'s':'')+' from Excel')}
+  };
+})();
+
 /* ---------- screen: mappings ---------- */
 function renderMaps(){
-  var h='<h1>Mappings</h1><p class="lede">A mapping turns a ledger entry into a grant, a budget line and a hub. Entries that cannot be matched wait here and are left out of budget vs actual until someone resolves them. Remembering a mapping applies it to every matching entry now and in future refreshes.</p>';
-  h+='<div class="panel"><h2>Needs attention ('+unm.length+')</h2>';
-  if(!unm.length)h+='<p class="muted" style="margin:0">Every entry is mapped. Nothing needs attention.</p>';
+  var h='<h1>Mappings</h1><p class="lede">A mapping turns a ledger entry into a funding source, a hub, a budget line and an activity. Mizani holds the mappings as rules, so every figure can be traced to the rule that produced it, and a change can be previewed before it is saved.</p>';
+  var vis=unm.filter(function(e){var hb=hubForEntry(e);return !hb||roleHubOK(hb)});
+  h+=tabsBar([['attention','Needs attention',vis.length],['rules','Rules',RULES.length],['matrix','Account matrix'],['codes','Codes']],S.mt,'mt');
+  h+=S.mt==='rules'?mapRules():S.mt==='matrix'?mapMatrix():S.mt==='codes'?mapCodes():mapAttention(vis);
+  return h+recentChanges();
+}
+function mapAttention(vis){
+  var can=!!role().edit&&!S.offline;
+  var h='<div class="panel"><h2>Needs attention ('+vis.length+')</h2>';
+  h+=setupNote(can);
+  if(!vis.length)h+='<p class="muted" style="margin:0">Every entry is mapped. Nothing needs attention.</p>';
   else{
     h+='<div class="scroll"><table class="st"><thead><tr><th>Entry</th><th>Description</th><th>Account</th><th>Cost centre</th><th>Grant code</th><th class="num">KES</th><th>Why</th><th>Resolve</th></tr></thead><tbody>';
-    unm.forEach(function(e){
-      var m=e.map,sel='';
-      if(m.need==='grant')sel='<select id="fx-g-'+e.id+'" aria-label="Grant for entry '+e.id+'"><option value="">Choose a grant</option>'+GRANTS.map(function(g){return'<option value="'+g.id+'">'+g.name+'</option>'}).join('')+'</select>';
-      else if(m.need==='line')sel='<select id="fx-l-'+e.id+'" aria-label="Budget line for entry '+e.id+'"><option value="">Choose a budget line</option>'+LINES.filter(function(l){return l.id!=='IND'}).map(function(l){return'<option value="'+l.id+'">'+l.name+'</option>'}).join('')+'</select>';
-      var rem=m.blank?'<div class="note">No code to remember, applies to this entry only.</div>':'<label><input type="checkbox" id="fx-r-'+e.id+'" checked> Remember for every '+(m.need==='line'?'entry on account '+e.acct:'entry with code '+esc(e.grant))+'</label>';
+    vis.forEach(function(e){
+      var m=e.map,sel='',dis=can?'':' disabled';
+      if(m.need==='grant')sel='<select id="fx-g-'+e.id+'" aria-label="Grant for entry '+e.id+'"'+dis+'><option value="">Choose a grant</option>'+GRANTS.map(function(g){return'<option value="'+g.id+'">'+esc(g.name)+'</option>'}).join('')+'</select>';
+      else if(m.need==='line')sel='<select id="fx-l-'+e.id+'" aria-label="Budget line for entry '+e.id+'"'+dis+'><option value="">Choose a budget line</option>'+LINES.filter(function(l){return l.id!=='IND'}).map(function(l){return'<option value="'+l.id+'">'+l.name+'</option>'}).join('')+'</select>';
+      var rem=m.blank?'<div class="note">No code to remember, applies to this entry only.</div>':(m.need==='hub'?'<div class="note">Add the cost centre on the Codes tab.</div>':'<label><input type="checkbox" id="fx-r-'+e.id+'" checked'+dis+'> Remember as a rule for every '+(m.need==='line'?'entry on account '+e.acct:'entry with code '+esc(e.grant))+'</label>');
       h+='<tr><td class="mono">'+e.id+'<div class="note">'+dateLabel(e.date)+'</div></td><td>'+esc(e.desc)+'</td><td class="mono">'+e.acct+'<div class="note">'+esc(ACCT_NAME[e.acct]||'')+'</div></td><td class="mono">'+e.cc+'</td><td class="mono">'+(e.grant?esc(e.grant):'<span class="muted">blank</span>')+'</td><td class="num">'+kes(e.kes)+'</td><td>'+esc(m.reason)+'</td>'+
-        '<td class="fixrow">'+sel+rem+'<button class="btn" type="button" data-act="fix" data-arg="'+e.id+'" style="margin-top:4px">Apply</button></td></tr>';
+        '<td class="fixrow">'+sel+rem+(sel?'<button class="btn" type="button" data-act="fix" data-arg="'+e.id+'" style="margin-top:4px"'+dis+'>Apply</button>':'')+'</td></tr>';
     });
     h+='</tbody></table></div>';
   }
-  h+='</div>';
-  h+='<div class="cols"><div class="panel"><h2>Account to budget line</h2><div class="scroll"><table class="st" style="min-width:0"><thead><tr><th>Account</th><th>Budget line</th></tr></thead><tbody>'+
-    Object.keys(acctMap).map(function(a){return'<tr><td><span class="mono">'+a+'</span> '+esc(ACCT_NAME[a]||'')+'</td><td>'+esc(lineName[acctMap[a]])+(added.acct[a]?' <span class="tag">added now</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
-    '<div class="panel"><h2>Cost centre to hub</h2><div class="scroll"><table class="st" style="min-width:0"><thead><tr><th>Cost centre</th><th>Hub</th></tr></thead><tbody>'+
-    HUBS.map(function(x){return'<tr><td class="mono">'+x.id+'</td><td>'+x.name+'</td></tr>'}).join('')+'</tbody></table></div>'+
-    '<h2 style="margin-top:16px">Grant code to grant</h2><div class="scroll"><table class="st" style="min-width:0"><thead><tr><th>Code</th><th>Grant</th></tr></thead><tbody>'+
-    Object.keys(grantMap).map(function(c){return'<tr><td class="mono">'+c+'</td><td>'+esc(grantName[grantMap[c]])+(added.grant[c]?' <span class="tag">added now</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
-  h+='<p class="note">Every mapping change is logged with who made it and when, so a figure can always be explained later.</p>';
+  return h+'</div>';
+}
+
+/* the rule builder */
+function builderState(){
+  var b=S.rb,conds=b.conds.filter(function(c){return String(c.v).trim()!==''}).map(function(c){return{f:c.f,v:String(c.v).trim()}}),pr=[];
+  if(!conds.length)pr.push('Add at least one condition.');
+  var fs=conds.map(function(c){return c.f});
+  if(fs.some(function(f,i){return fs.indexOf(f)!==i}))pr.push('Use each field once.');
+  if(!b.value)pr.push('Choose what to set it to.');
+  var rule=null,sim=null;
+  if(!pr.length){
+    rule={id:'(new)',target:b.target,when:conds,value:b.value,prio:Number(b.prio)||0,by:'You, this session',note:''};
+    var same=RULES.filter(function(r){return r.target===rule.target&&r.value===rule.value&&r.prio===rule.prio&&r.when.length===conds.length&&conds.every(function(c){return r.when.some(function(x){return x.f===c.f&&x.v===c.v})})})[0];
+    if(same)pr.push('Rule '+same.id+' already says exactly this.');
+    else sim=simulate(RULES.concat([rule]),rule,RULES.concat([rule]));
+  }
+  return{rule:rule,problems:pr,sim:sim};
+}
+function ruleBuilder(){
+  var b=S.rb,st=builderState(),h='<div class="panel"><h2>New rule</h2><p class="note" style="margin-top:0">When an entry has these values, set the target. The most specific rule wins, then the higher priority. Two rules of equal strength that disagree make the entry a clash.</p><div class="rb">';
+  h+='<div class="rbrow"><span class="rbl">When an entry has</span><div class="conds">'+b.conds.map(function(c,i){
+    return'<div class="cond"><select id="rbc-f-'+i+'" data-change="rbc" data-i="'+i+'" data-k="f" aria-label="Field">'+Object.keys(FIELD_LABEL).map(function(f){return'<option value="'+f+'"'+(c.f===f?' selected':'')+'>'+FIELD_LABEL[f]+'</option>'}).join('')+'</select>'+
+      '<span class="rbl">equal to</span><input id="rbc-v-'+i+'" list="dl-'+c.f+'" data-change="rbc" data-i="'+i+'" data-k="v" value="'+esc(c.v)+'" placeholder="'+(c.f==='acct'?'e.g. 5350':c.f==='cc'?'e.g. GRS':c.f==='grant'?'e.g. WSH':'e.g. ACT-WSH-01')+'" aria-label="Value">'+
+      (b.conds.length>1?'<button class="btn" type="button" data-act="rbdel" data-arg="'+i+'" aria-label="Remove condition">Remove</button>':'')+'</div>'}).join('')+
+    (b.conds.length<4?'<div><button class="btn" type="button" data-act="rbadd">Add a condition</button></div>':'')+'</div></div>';
+  h+=['acct','cc','grant','act'].map(function(f){return'<datalist id="dl-'+f+'">'+seenValues(f).map(function(v){return'<option value="'+esc(v)+'">'}).join('')+'</datalist>'}).join('');
+  h+='<div class="rbrow"><span class="rbl">set its</span><select id="rb-target" data-change="rb" data-k="target" aria-label="Target">'+Object.keys(TARGET_LABEL).map(function(t){return'<option value="'+t+'"'+(b.target===t?' selected':'')+'>'+TARGET_LABEL[t].toLowerCase()+'</option>'}).join('')+'</select>'+
+    '<span class="rbl">to</span><select id="rb-value" data-change="rb" data-k="value" aria-label="Value to set"><option value="">Choose…</option>'+valueOptions(b.target).map(function(o){return'<option value="'+esc(o[0])+'"'+(b.value===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select>'+
+    '<span class="rbl">priority</span><input id="rb-prio" type="number" min="-9" max="9" style="width:70px" data-change="rb" data-k="prio" value="'+esc(b.prio)+'" aria-label="Priority"></div></div>';
+  if(st.problems.length)h+='<p class="note" role="status">'+esc(st.problems[0])+'</p>';
+  else h+=impactHtml(st.sim);
+  h+='<div class="btns"><button class="btn primary" type="button" data-act="rbsave"'+(st.rule?'':' disabled')+'>Save as rule set v'+(RSV+1)+'</button><button class="btn" type="button" data-act="rbclear">Clear</button></div></div>';
   return h;
+}
+function mapRules(){
+  var can=canSetup(),wins=ruleStats(),mapped=entries.length-unm.length;
+  var h='<div class="stats">'+stat('Rule set','v'+RSV,RULES.length+' rules, '+RULES.filter(function(r){return r.by!=='Base set'}).length+' added this session')+
+    stat('Mapped',nfmt(mapped),(Math.round(mapped/entries.length*1000)/10)+'% of '+nfmt(entries.length)+' entries')+
+    '<div class="stat'+(unm.length?' neg':'')+'"><small>Need a mapping</small><strong>'+unm.length+'</strong><span>'+(unm.length?'<button class="link" type="button" data-act="tab" data-arg="mt:attention">Review them</button>':'nothing waiting')+'</span></div></div>';
+  h+=setupNote(can,'Only the country finance lead changes rules. You can read them and see what each one decides.');
+  h+=rmBar();
+  if(can)h+=ruleBuilder();
+  var order={hub:0,grant:1,line:2,act:3};
+  var rows=RULES.slice().sort(function(a,b){return order[a.target]-order[b.target]||a.id.localeCompare(b.id)}).map(function(r){
+    return'<tr><td class="mono">'+r.id+'</td><td>'+esc(TARGET_LABEL[r.target])+'</td><td>'+r.when.map(function(c){return'<span class="chip">'+esc(FIELD_LABEL[c.f])+' = <b>'+esc(c.v)+'</b></span>'}).join(' ')+'</td><td>'+esc(valueLabel(r.target,r.value))+'</td><td class="num">'+r.prio+'</td><td class="num">'+(wins[r.id]||0)+'</td><td>'+(r.by==='Base set'?'<span class="muted">Base set</span>':'<span class="tag">'+esc(r.by)+'</span>')+'</td>'+
+      '<td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>'}).join('');
+  h+='<div class="panel"><h2>All rules (set v'+RSV+')</h2><div class="scroll"><table class="st"><thead><tr><th>Rule</th><th>Sets</th><th>When</th><th>To</th><th class="num">Priority</th><th class="num">Decides</th><th>Origin</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="note" style="margin-bottom:0">“Decides” counts the ledger entries where this rule gives the answer. More conditions means a stronger rule.</p></div>';
+  return h;
+}
+
+/* account against each grant's own budget lines */
+function lineFor(acct,g,rules){return resolve({acct:acct,grant:g,cc:'',act:''},'line',rules)}
+function acctRule(a,g){
+  return RULES.filter(function(r){
+    if(r.target!=='line')return false;
+    if(!g)return r.when.length===1&&r.when[0].f==='acct'&&r.when[0].v===a;
+    return r.when.length===2&&r.when.some(function(c){return c.f==='acct'&&c.v===a})&&r.when.some(function(c){return c.f==='grant'&&c.v===g});
+  })[0];
+}
+function mxPlan(m){
+  var cur=acctRule(m.a,m.g),removes=cur?[cur.id]:[],adds=[];
+  if(m.v&&m.v!=='*')adds.push({target:'line',when:m.g?[{f:'acct',v:m.a},{f:'grant',v:m.g}]:[{f:'acct',v:m.a}],value:m.v,prio:0});
+  var keep=RULES.filter(function(r){return removes.indexOf(r.id)<0}),cand=adds.map(function(a){return{id:'(new)',target:a.target,when:a.when,value:a.value,prio:0}});
+  var rules=keep.concat(cand);
+  return{adds:adds,removes:removes,sim:simulate(rules,cand[0]||cur||null,cand[0]?rules:RULES),cand:cand[0]};
+}
+function mapMatrix(){
+  var can=canSetup(),accts=seenValues('acct');
+  var h=setupNote(can,'Only the country finance lead changes mappings. You can read the matrix.');
+  h+='<div class="panel"><h2>Account against each grant’s budget lines</h2><p class="note" style="margin-top:0">The same ledger account can land on a different budget line for each donor. Pick a line to set it for one grant, or use the last column to set the default for all grants. A change is previewed before it is saved.</p>';
+  if(S.mx){
+    var m=S.mx,pl=mxPlan(m),gname=m.g?grantName[m.g]:'every grant without its own rule';
+    h+='<div class="confirm"><span><b>Account '+esc(m.a)+'</b> on <b>'+esc(gname)+'</b> → <b>'+esc(m.v==='*'||!m.v?'no budget line':(m.g?lineLabel(m.g,m.v):lineName[m.v]))+'</b></span><span class="btns"><button class="btn primary" type="button" data-act="mxapply">Save as rule set v'+(RSV+1)+'</button><button class="btn" type="button" data-act="mxcancel">Cancel</button></span></div>'+impactHtml(pl.sim);
+  }
+  h+='<div class="scroll"><table class="mx" style="min-width:760px"><thead><tr><th>Ledger account</th>'+GRANTS.map(function(g){return'<th>'+esc(g.name)+'</th>'}).join('')+'<th>Default, all grants</th></tr></thead><tbody>';
+  accts.forEach(function(a){
+    var def=acctRule(a,'');
+    h+='<tr><td><span class="mono">'+a+'</span> '+esc(ACCT_NAME[a]||'')+'</td>';
+    GRANTS.forEach(function(g){
+      var sp=acctRule(a,g.id),eff=lineFor(a,g.id),opts=[['*','Default'+(def?': '+lineLabel(g.id,def.value):' (none)')]].concat(LINES.map(function(l){return[l.id,lineLabel(g.id,l.id)]}));
+      h+='<td><select id="mx-'+a+'-'+g.id+'" data-change="mx" data-a="'+a+'" data-g="'+g.id+'" aria-label="Account '+a+' for '+esc(g.name)+'"'+(can?'':' disabled')+'>'+opts.map(function(o){return'<option value="'+esc(o[0])+'"'+((sp?sp.value:'*')===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select>'+
+        '<div class="note">'+(eff.value?(sp?'specific rule '+sp.id:'from the default'):'<span class="neg">no budget line</span>')+'</div></td>';
+    });
+    h+='<td><select id="mx-'+a+'-all" data-change="mx" data-a="'+a+'" data-g="" aria-label="Default line for account '+a+'"'+(can?'':' disabled')+'><option value="*"'+(def?'':' selected')+'>No line (unmapped)</option>'+LINES.map(function(l){return'<option value="'+l.id+'"'+(def&&def.value===l.id?' selected':'')+'>'+esc(l.name)+'</option>'}).join('')+'</select><div class="note">'+(def?'rule '+def.id:'entries wait in Needs attention')+'</div></td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+/* codes: ledger cost centres, grant codes and activity codes */
+var CODE_KINDS=[['cc','hub','Cost centres to hubs','Cost centre','Hub'],['grant','grant','Grant codes to funding sources','Grant code','Funding source']];
+function sameConds(a,b){return a.length===b.length&&a.every(function(c){return b.some(function(d){return d.f===c.f&&d.v===c.v})})}
+function mapCodes(){
+  var can=canSetup(),h=setupNote(can,'Only the country finance lead changes codes. You can read them.');
+  h+=rmBar();
+  var use={};entries.forEach(function(e){CODE_KINDS.forEach(function(k){var v=fieldVal(e,k[0]);if(v){var key=k[0]+'|'+v;use[key]=(use[key]||0)+1}})});
+  CODE_KINDS.forEach(function(k){
+    var rows=RULES.filter(function(r){return r.target===k[1]&&r.when.length===1&&r.when[0].f===k[0]});
+    h+='<div class="panel"><h2>'+k[2]+'</h2><div class="scroll"><table class="st" style="min-width:560px"><thead><tr><th>'+k[3]+' in the ledger</th><th>Maps to</th><th class="num">Entries using it</th><th>Rule</th><th></th></tr></thead><tbody>'+
+      rows.map(function(r){return'<tr><td class="mono">'+esc(r.when[0].v)+'</td><td>'+esc(valueLabel(r.target,r.value))+'</td><td class="num">'+(use[k[0]+'|'+r.when[0].v]||0)+'</td><td><span class="mono">'+r.id+'</span>'+(r.by==='Base set'?'':' <span class="tag">added now</span>')+'</td><td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>'}).join('')+
+      (can?'<tr><td><input class="ed" id="cb-'+k[0]+'-code" placeholder="New ledger code" aria-label="New '+k[3].toLowerCase()+'"></td><td><select class="ed" id="cb-'+k[0]+'-val" aria-label="Maps to"><option value="">Choose…</option>'+valueOptions(k[1]).map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td></td><td></td><td><button class="btn" type="button" data-act="cbadd" data-arg="'+k[0]+'">Add</button></td></tr>':'')+
+      '</tbody></table></div></div>';
+  });
+  /* activities: the grant code and the activity type code together pick the activity */
+  var ar=RULES.filter(function(r){return r.target==='act'}).sort(function(a,b){var x=ACTS.indexOf(actById(a.value)),y=ACTS.indexOf(actById(b.value));return x-y});
+  h+='<div class="panel"><h2>Activity codes to activities</h2><p class="note" style="margin-top:0">The ledger carries an activity type code that several grants can share. The grant code and the type code together identify the activity, so the same type under two grants is two separate activities.</p><div class="scroll"><table class="st" style="min-width:700px"><thead><tr><th>Activity code</th><th>Grant code</th><th>Maps to activity</th><th class="num">Entries using it</th><th>Rule</th><th></th></tr></thead><tbody>'+
+    ar.map(function(r){
+      var ac=r.when.filter(function(c){return c.f==='act'})[0],gc=r.when.filter(function(c){return c.f==='grant'})[0],a=actById(r.value);
+      var n=entries.filter(function(e){return fieldVal(e,'act')===(ac&&ac.v)&&(!gc||e.grant===gc.v)}).length;
+      return'<tr><td class="mono">'+esc(ac?ac.v:'')+'</td><td class="mono">'+(gc?esc(gc.v):'<span class="muted">any</span>')+'</td><td>'+esc(a?a.name:r.value)+(a?'<div class="note">'+esc(grantName[a.grant])+' · '+esc(a.theme)+'</div>':'')+'</td><td class="num">'+n+'</td><td><span class="mono">'+r.id+'</span>'+(r.by==='Base set'?'':' <span class="tag">added now</span>')+'</td><td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>';
+    }).join('')+
+    (can?'<tr><td><input class="ed" id="cb-act-code" placeholder="New code" aria-label="New activity code"></td><td class="note">taken from the activity</td><td><select class="ed" id="cb-act-val" aria-label="Maps to activity"><option value="">Choose…</option>'+valueOptions('act').map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td></td><td></td><td><button class="btn" type="button" data-act="cbadd" data-arg="act">Add</button></td></tr>':'')+
+    '</tbody></table></div></div>';
+  return h+importPanel('codes',can);
+}
+
+/* ---------- screen: funding sources, with budget lines and activities ---------- */
+function grantBudgetUSD(g,l){
+  var t=0;Object.keys(B).forEach(function(k){if(k.split('|')[0]===g)LINES.forEach(function(x){if(!l||l===x.id)t+=sum(B[k].approved[x.id])})});
+  return t;
+}
+function hasBudget(g){return Object.keys(B).some(function(k){return k.split('|')[0]===g})}
+function fundIssues(g){
+  var i=[],bud=grantBudgetUSD(g.id);
+  if(g.end<=g.start)i.push('The end date is not after the start date.');
+  if(bud>g.total)i.push('The FY2026 budget is more than the award total.');
+  if(g.status==='Active'&&g.end<'2026-10-20')i.push('Marked Active but the end date has passed.');
+  if(!hasBudget(g.id))i.push('No budget exists yet.');
+  return i;
+}
+function actSpend(a){var t=0;entries.forEach(function(e){if(e.map.ok&&e.map.act===a.id&&e.m<=S.period)t+=e.kes/FX});return t}
+function emptyBudget(){var m={},z=function(){return[0,0,0,0,0,0,0,0,0,0,0,0]};['PER','TRV','SUP','PTN','IND'].forEach(function(l){m[l]=z()});return m}
+function zerosOK(g){return Object.keys(B).filter(function(k){return k.split('|')[0]===g}).every(function(k){return LINES.every(function(l){return sum(B[k].approved[l.id])===0&&sum(B[k].draft[l.id])===0})})}
+function renderFunding(){
+  var can=canSetup(),sel=grantById(S.fs)||GRANTS[0];if(sel)S.fs=sel.id;
+  var totA=0,bud=0;GRANTS.forEach(function(g){totA+=g.total;bud+=grantBudgetUSD(g.id)});
+  var h='<h1>Funding sources</h1><p class="lede">Each grant, its dates and award, the donor’s own budget lines and the activities it pays for. Everything else in Mizani points at these records, so they are the first thing to set up for a new client. Edit a cell directly, or paste rows from Excel.</p>';
+  h+=setupNote(can,'Only the country finance lead changes funding sources. You can read them.');
+  h+='<div class="stats">'+stat('Funding sources',String(GRANTS.length),GRANTS.filter(function(g){return g.status==='Active'}).length+' active')+stat('Total awards (USD)',nfmt(totA),'all grants, whole award period')+stat('FY2026 budgeted (USD)',nfmt(bud),totA?Math.round(bud/totA*100)+'% of the awards':'')+stat('Activities',String(ACTS.length),ACTS.filter(function(a){return a.status==='Active'}).length+' active')+'</div>';
+  h+=msgBar('fund');
+  var rows=GRANTS.map(function(g){
+    var iss=fundIssues(g),bu=grantBudgetUSD(g.id),on=g.id===S.fs;
+    return'<tr'+(on?' style="background:var(--accent-soft)"':'')+'><td><button type="button" class="link mono" data-act="fsel" data-arg="'+g.id+'" aria-current="'+on+'">'+g.id+'</button></td>'+
+      '<td style="min-width:230px"><div class="stk">'+ed('fund',g.id,'name',g.name,{can:can,label:'Name of '+g.id})+ed('fund',g.id,'donor',g.donor,{can:can,label:'Donor of '+g.id})+'</div></td>'+
+      '<td style="width:140px"><div class="stk">'+ed('fund',g.id,'start',g.start,{can:can,type:'date',label:'Start of '+g.id})+ed('fund',g.id,'end',g.end,{can:can,type:'date',label:'End of '+g.id})+'</div></td>'+
+      '<td style="width:124px">'+ed('fund',g.id,'total',nfmt(g.total),{can:can,num:true,label:'Total award of '+g.id})+'</td><td class="num">'+nfmt(bu)+'</td>'+
+      '<td style="width:100px">'+ed('fund',g.id,'status',g.status,{can:can,sel:[['Active','Active'],['Ended','Ended']],label:'Status of '+g.id})+'</td>'+
+      '<td>'+(iss.length?'<span class="pill warn" title="'+esc(iss.join(' '))+'">'+iss.length+' to check</span>':'<span class="pill ok">Checks pass</span>')+'</td></tr>';
+  }).join('');
+  var addrow=can?'<tr><td><input class="ed" id="fa-code" placeholder="Code" aria-label="New code" style="min-width:64px"></td><td><div class="stk"><input class="ed" id="fa-name" placeholder="Name" aria-label="New name"><input class="ed" id="fa-donor" placeholder="Donor" aria-label="New donor"></div></td>'+
+    '<td><div class="stk"><input class="ed" id="fa-start" type="date" aria-label="New start date"><input class="ed" id="fa-end" type="date" aria-label="New end date"></div></td><td><input class="ed num" id="fa-total" inputmode="numeric" placeholder="Total" aria-label="New total award"></td><td></td><td></td><td><button class="btn" type="button" data-act="fadd">Add</button></td></tr>':'';
+  h+='<div class="panel" id="fund-table"><div class="scroll"><table class="st tight" style="min-width:860px"><thead><tr><th>Code</th><th>Name and donor</th><th>Starts and ends</th><th class="num">Total award (USD)</th><th class="num">FY2026 budget (USD)</th><th>Status</th><th>Checks</th></tr></thead><tbody>'+rows+addrow+'</tbody></table></div>'+
+    '<p class="note" style="margin-bottom:0">The grant code in the ledger is matched to a code on the Mappings screen. Budgets are approved on the Budgets screen, so the FY2026 figure cannot be edited here.</p></div>';
+  h+=importPanel('funding',can);
+  if(sel){
+    var iss=fundIssues(sel);
+    h+='<div class="panel" id="fund-detail"><h2>'+esc(sel.name)+' <span class="muted" style="font-weight:400;font-size:14px">'+esc(sel.id)+' · '+spanText(sel)+'</span></h2>';
+    if(iss.length)h+='<div class="banner warn" role="status"><span><b>To check:</b> '+esc(iss.join(' '))+'</span>'+(!hasBudget(sel.id)&&can?'<button class="btn" type="button" data-act="fmk">Create empty budgets for every hub</button>':'')+'</div>';
+    h+=tabsBar([['lines','Budget lines'],['acts','Activities',ACTS.filter(function(a){return a.grant===sel.id}).length]],S.ft,'ft');
+    h+=S.ft==='acts'?fundActs(sel,can):fundLines(sel,can);
+    h+='</div>';
+  }
+  return h+recentChanges();
+}
+function fundLines(g,can){
+  var accts=seenValues('acct'),tot=grantBudgetUSD(g.id);
+  var rows=LINES.map(function(l){
+    var mine=accts.filter(function(a){return lineFor(a,g.id).value===l.id}),bu=grantBudgetUSD(g.id,l.id);
+    return'<tr><td class="mono">'+l.id+'</td><td style="min-width:240px">'+ed('line',g.id+'|'+l.id,'name',lineLabel(g.id,l.id),{can:can,label:'Donor’s name for '+l.name})+'</td>'+
+      '<td>'+(l.id==='IND'?'<span class="muted">Calculated at the rate in the agreement (10%), so it cannot be entered.</span>':'')+'<div class="chips">'+mine.map(function(a){return'<span class="chip m" title="'+esc(ACCT_NAME[a]||'')+'">'+a+'</span>'}).join('')+(mine.length||l.id==='IND'?'':'<span class="muted">none</span>')+'</div></td>'+
+      '<td class="num">'+nfmt(bu)+'</td><td class="num">'+(tot?Math.round(bu/tot*1000)/10+'%':'')+'</td></tr>';
+  }).join('');
+  var orphans=accts.filter(function(a){return !lineFor(a,g.id).value});
+  return msgBar('line')+'<div class="scroll"><table class="st" style="min-width:680px"><thead><tr><th>Line</th><th>Donor’s name for it</th><th>Ledger accounts that land here</th><th class="num">FY2026 budget (USD)</th><th class="num">Share</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    (orphans.length?'<div class="banner info" style="margin-top:12px"><span><b>'+orphans.length+' ledger account'+(orphans.length>1?'s have':' has')+' no budget line for this grant:</b> '+orphans.map(function(a){return a+' '+esc(ACCT_NAME[a]||'')}).join(', ')+'.</span><button class="btn" type="button" data-act="gomap" data-arg="matrix">Set them in the account matrix</button></div>':'<p class="note" style="margin:12px 0 0">Every ledger account has a budget line for this grant.</p>');
+}
+function fundActs(g,can){
+  var list=ACTS.filter(function(a){return a.grant===g.id}),plan=0,themeOpts=THEMES.map(function(t){return[t,t]});
+  var codes={};RULES.forEach(function(r){if(r.target==='act'&&r.when.some(function(c){return c.f==='grant'&&c.v===g.id})){var c=r.when.filter(function(x){return x.f==='act'})[0];if(c)(codes[r.value]=codes[r.value]||[]).push(c.v)}});
+  var rows=list.map(function(a){
+    var sp=actSpend(a),n=entries.filter(function(e){return e.map.ok&&e.map.act===a.id}).length,twins=ACTS.filter(function(b){return b.type===a.type&&b.grant!==a.grant});plan+=a.budget;
+    return'<tr><td class="mono">'+esc(a.type)+'</td><td style="min-width:230px">'+ed('act',a.id,'name',a.name,{can:can,label:'Name of '+a.id})+(twins.length?'<div class="note">The same type is funded by '+twins.map(function(b){return esc(grantName[b.grant])}).join(', ')+'. It is tracked there as a separate activity.</div>':'')+'</td>'+
+      '<td style="min-width:150px">'+ed('act',a.id,'theme',a.theme,{can:can,sel:themeOpts,label:'Theme of '+a.id})+'</td><td style="min-width:92px">'+ed('act',a.id,'status',a.status,{can:can,sel:[['Active','Active'],['Closed','Closed']],label:'Status of '+a.id})+'</td>'+
+      '<td style="min-width:112px">'+ed('act',a.id,'budget',nfmt(a.budget),{can:can,num:true,label:'Planning budget of '+a.id})+'</td><td class="num">'+nfmt(sp)+'<div class="note">'+(a.budget?Math.round(sp/a.budget*100)+'% used':'')+'</div></td>'+
+      '<td><div class="chips">'+(codes[a.id]||[]).map(function(c){return'<span class="chip m">'+esc(c)+' + '+esc(g.id)+'</span>'}).join('')+'</div><div class="note" style="margin-top:4px">'+n+' entries'+(can&&!n?' \u00b7 <button class="link" type="button" data-act="actdel" data-arg="'+a.id+'" aria-label="Remove '+a.id+'">Remove</button>':'')+'</div></td></tr>';
+  }).join('');
+  var addrow=can?'<tr><td><input class="ed" id="aa-code" placeholder="Type code" aria-label="New activity type code" style="min-width:72px"></td><td><input class="ed" id="aa-name" placeholder="Name of the activity" aria-label="New activity name"></td><td><select class="ed" id="aa-theme" aria-label="Theme">'+themeOpts.map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td>Active</td><td><input class="ed num" id="aa-budget" inputmode="numeric" placeholder="Budget" aria-label="New planning budget"></td><td></td><td><button class="btn sm" type="button" data-act="actadd">Add</button></td></tr>':'';
+  var bu=grantBudgetUSD(g.id)-grantBudgetUSD(g.id,'PER')-grantBudgetUSD(g.id,'IND'),pct=bu?Math.round(plan/bu*100):0;
+  var gaps=entries.filter(function(e){return e.map.ok&&e.map.grant===g.id&&!e.map.act&&e.map.line!=='PER'&&e.map.line!=='IND'&&e.m<=S.period}),gapUSD=gaps.reduce(function(t,e){return t+e.kes/FX},0);
+  var gcodes={};gaps.forEach(function(e){gcodes[e.act||'no code']=1});
+  return msgBar('act')+'<div class="scroll"><table class="st tight" style="min-width:940px"><thead><tr><th>Type</th><th>Activity</th><th>Theme</th><th>Status</th><th class="num">Planning budget (USD)</th><th class="num">Spend to date (USD)</th><th>Ledger mapping</th></tr></thead><tbody>'+rows+addrow+'</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0">An activity belongs to this grant alone. Its planning budget covers the grant’s delivery costs (travel, supplies and partner grants, not staff or indirect costs) and adds up to <b>'+nfmt(plan)+' USD</b>, '+(bu?'<b>'+pct+'%</b> of the budget for those lines ('+nfmt(bu)+' USD)':'with no FY2026 budget to compare')+'. '+(pct>100?'<span class="neg">That is more than the budget.</span>':pct&&pct<90?'Part of the budget is not planned to an activity yet.':'')+' Spend comes from ledger entries whose grant code and activity type code map to the activity.</p>'+
+    (gaps.length?'<p class="note" style="margin:6px 0 0"><b>'+gaps.length+'</b> non-staff entries on this grant (USD '+nfmt(gapUSD)+') carry no activity code, a retired one, or a type this grant does not fund ('+Object.keys(gcodes).map(esc).join(', ')+'), so they count toward the grant but to no activity. Map the code on the <button class="link" type="button" data-act="gomap" data-arg="codes">Codes tab</button>.</p>':'')+
+    importPanel('acts',can);
+}
+IMP.funding={
+  title:'Paste funding sources from Excel',header:'code',
+  help:'Columns: code (2 to 6 letters or digits), name, donor, start date, end date (both as YYYY-MM-DD), and total award in USD. Each valid row adds a funding source and the rule that maps its code in the ledger.',
+  placeholder:'NUT2\tChild Nutrition phase 2\tBilateral donor A\t2027-01-01\t2029-12-31\t2400000',
+  sample:'code\tname\tdonor\tstart\tend\ttotal\nLIV\tLivelihoods\tFoundation D\t2026-11-01\t2029-10-31\t2100000\nCLM\tClimate Resilience\tTrust E\t2027-01-01\t2028-12-31\t900000\nNUT\tDuplicate code\tDonor\t2026-01-01\t2027-12-31\t500000\nBAD\tBad dates\tDonor\t2028-01-01\t2027-01-01\t100000',
+  parse:function(c,recs){
+    var code=(c[0]||'').toUpperCase();
+    if(!/^[A-Z0-9]{2,6}$/.test(code))return{err:'The code must be 2 to 6 letters or digits.'};
+    if(grantById(code)||recs.some(function(r){return r.id===code}))return{err:'The code '+code+' is already used.'};
+    if(!c[1])return{err:'The name is empty.'};
+    if(!validDate(c[3])||!validDate(c[4]))return{err:'Start and end must be real dates written as YYYY-MM-DD.'};
+    if(c[4]<=c[3])return{err:'The end date must be after the start date.'};
+    var t=parseNum(c[5]);if(isNaN(t)||t<=0)return{err:'The total award must be a number above zero.'};
+    return{rec:{id:code,name:c[1],donor:c[2]||'Donor to be confirmed',currency:'USD',start:c[3],end:c[4],total:t,status:'Active'}};
+  },
+  apply:function(recs){
+    recs.forEach(function(g){GRANTS.push(g)});refreshNames();
+    applyRuleChange(recs.map(function(g){return{target:'grant',when:[{f:'grant',v:g.id}],value:g.id,note:'New funding source'}}),[],'added '+recs.length+' funding source'+(recs.length>1?'s':'')+' from Excel ('+recs.map(function(g){return g.id}).join(', ')+')');
+  }
+};
+IMP.acts={
+  title:'Paste activities from Excel',header:'type',
+  help:'Columns: activity type code, name, theme (Nutrition, Water and hygiene or Education) and planning budget in USD. They are added to the grant selected above, and the grant code with the type code is mapped from the ledger. The same type code can be used under another grant; it becomes a separate activity.',
+  placeholder:'A106\tMobile outreach clinics\tNutrition\t80000',
+  sample:'type\tname\ttheme\tbudget\nA106\tCommunity health volunteers\tNutrition\t45000\nA107\tOutreach radio campaign\tEducation\t30000\nA101\tDuplicate type under this grant\tNutrition\t1000\nA108\tUnknown theme\tFarming\t20000\nA109\tMissing budget\tNutrition',
+  parse:function(c,recs){
+    var code=(c[0]||'').toUpperCase();
+    if(!/^[A-Z0-9-]{3,14}$/.test(code))return{err:'The type code must be 3 to 14 letters, digits or dashes.'};
+    var id=S.fs+'-'+code;
+    if(actById(id)||recs.some(function(r){return r.id===id}))return{err:'This grant already has an activity of type '+code+'.'};
+    if(!c[1])return{err:'The name is empty.'};
+    var th=THEMES.filter(function(t){return t.toLowerCase()===(c[2]||'').toLowerCase()})[0];
+    if(!th)return{err:'"'+(c[2]||'')+'" is not a theme. Use '+THEMES.join(', ')+'.'};
+    var b=parseNum(c[3]);if(isNaN(b))return{err:'The planning budget must be a number.'};
+    return{rec:{id:id,grant:S.fs,type:code,name:c[1],theme:th,status:'Active',budget:b,w:1}};
+  },
+  apply:function(recs){
+    recs.forEach(function(a){ACTS.push(a)});
+    applyRuleChange(recs.map(function(a){return{target:'act',when:[{f:'act',v:a.type},{f:'grant',v:a.grant}],value:a.id,note:'New activity'}}),[],'added '+recs.length+' activit'+(recs.length>1?'ies':'y')+' to '+grantName[S.fs]+' from Excel');
+  }
+};
+
+/* ---------- editing setup tables in place ---------- */
+function commitEdit(t,id,f,raw){
+  var v=String(raw),msg='',what='',tag=t==='line'?'line':t==='act'?'act':t==='staff'?'staff':'fund';
+  if(t==='fund'){
+    var g=grantById(id);if(!g||!canSetup())return;
+    if(f==='name'||f==='donor'){v=v.trim();if(!v)msg='The '+f+' cannot be empty.';else if(v.length>60)msg='Keep the '+f+' under 60 characters.'}
+    else if(f==='total'){v=parseNum(v);if(isNaN(v)||v<=0)msg='The total award must be a number above zero.'}
+    else if(f==='start'||f==='end'){
+      if(!validDate(v))msg='Use a real date, written as YYYY-MM-DD.';
+      else{var st=f==='start'?v:g.start,en=f==='end'?v:g.end;if(en<=st)msg='The end date must be after the start date.'}
+    }
+    if(!msg){g[f]=v;what='the '+f+' of '+id+' to '+(f==='total'?nfmt(v):v)}
+  }else if(t==='act'){
+    var a=actById(id);if(!a||!canSetup())return;
+    if(f==='name'){v=v.trim();if(!v)msg='The activity name cannot be empty.'}
+    else if(f==='theme'){if(THEMES.indexOf(v)<0)msg='Choose one of the listed themes.'}
+    else if(f==='budget'){v=parseNum(v);if(isNaN(v))msg='The planning budget must be a number.'}
+    if(!msg){a[f]=v;what='the '+f+' of activity '+id+' to '+(f==='budget'?nfmt(v):v)}
+  }else if(t==='line'){
+    var p=id.split('|');if(!canSetup())return;
+    v=v.trim();
+    if(!v)msg='The donor’s name for a line cannot be empty.';
+    else if(v.length>40)msg='Keep the name under 40 characters.';
+    else if(LINES.some(function(l){return l.id!==p[1]&&lineLabel(p[0],l.id).toLowerCase()===v.toLowerCase()}))msg='Another line of this grant already has that name.';
+    if(!msg){(LNAME[p[0]]=LNAME[p[0]]||{})[p[1]]=v;what='the donor’s name for '+lineName[p[1]]+' on '+grantName[p[0]]+' to “'+v+'”'}
+  }else if(t==='staff'&&typeof commitStaff==='function'){
+    var r=commitStaff(id,f,v);msg=r.msg;what=r.what;
+  }
+  S.msg[tag]=msg?id+': '+msg:'';
+  if(!msg&&what)logIt('changed '+what);
+  setTimeout(renderKeep,0);
+}
+
+/* ---------- screen: staff and funding ---------- */
+var DAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+function srcName(id){return id==='CORE'?'Unrestricted (core)':(grantName[id]||id)}
+function srcOptions(){return GRANTS.map(function(g){return[g.id,g.name]}).concat([['CORE','Unrestricted (core)']])}
+function posById(no){return POSITIONS.filter(function(x){return x.no===no})[0]}
+function mFirst(m){return'2026-'+pad(m)+'-01'}
+function mLast(m){return'2026-'+pad(m)+'-'+pad(DAYS[m-1])}
+function monthActive(x,m){return x.start<=mLast(m)&&(!x.end||x.end>=mFirst(m))}
+function splitActive(sp,m){return(!sp.from||sp.from<=mLast(m))&&(!sp.to||sp.to>=mFirst(m))}
+function coverage(x){
+  var out=[],m;
+  for(m=1;m<=12;m++){
+    if(!monthActive(x,m)){out.push(null);continue}
+    var t=0;x.splits.forEach(function(sp){if(splitActive(sp,m))t+=Number(sp.pct)||0});out.push(t);
+  }
+  return out;
+}
+function posState(x){
+  var c=coverage(x).filter(function(v){return v!==null});
+  if(!c.length)return'none';
+  return c.some(function(v){return v>100})?'over':c.some(function(v){return v<100})?'gap':'ok';
+}
+function posProblem(x){
+  var c=coverage(x),i;
+  for(i=0;i<12;i++)if(c[i]!==null&&c[i]!==100)return(c[i]>100?'Over-allocated, ':'Gap, ')+c[i]+'% from '+MONTHS[i];
+  return'';
+}
+function visiblePositions(){return POSITIONS.filter(function(x){return roleHubOK(x.hub)&&(!S.scope||x.hub===S.scope)})}
+function staffIssueCount(){return POSITIONS.filter(function(x){return x.status==='Active'&&roleHubOK(x.hub)&&(posState(x)==='gap'||posState(x)==='over')}).length}
+function planCost(list){
+  var cost={};
+  list.forEach(function(x){for(var m=1;m<=12;m++){if(!monthActive(x,m))continue;x.splits.forEach(function(sp){if(splitActive(sp,m))cost[sp.src]=(cost[sp.src]||0)+x.salary*(Number(sp.pct)||0)/100})}});
+  return cost;
+}
+function persBudgetKES(g){var t=0;Object.keys(B).forEach(function(k){var p=k.split('|');if(p[0]===g&&hubOK(p[1]))t+=sum(B[k].approved.PER)*FX});return t}
+function fundChips(x){
+  return'<div class="chips">'+x.splits.map(function(sp){return'<span class="chip" title="'+esc(srcName(sp.src)+(sp.from?' from '+sp.from:'')+(sp.to?' to '+sp.to:''))+'">'+esc(sp.src)+' <b>'+sp.pct+'%</b>'+(sp.from||sp.to?' *':'')+'</span>'}).join('')+(x.splits.length?'':'<span class="muted">none yet</span>')+'</div>';
+}
+function renderStaff(){
+  var list=visiblePositions(),sal=!!role().salary,h='<h1>Staff and funding</h1><p class="lede">Each position, who holds it, and how its salary is shared across funding sources by percent of time and dates. This is the evidence behind the personnel line of every budget. Edit a cell, open a position to change its funding, or paste rows from Excel. The names here are invented.</p>';
+  var any=list.length&&list.some(function(x){return canHub(x.hub)});
+  h+=setupNote(any,'Your role can read staff funding but not change it.');
+  var active=list.filter(function(x){return x.status==='Active'&&monthActive(x,10)}),bill=active.reduce(function(t,x){return t+x.salary},0);
+  var cost=planCost(list),grantCost=0,totCost=0;Object.keys(cost).forEach(function(k){totCost+=cost[k];if(k!=='CORE')grantCost+=cost[k]});
+  var fix=list.filter(function(x){return x.status==='Active'&&(posState(x)==='gap'||posState(x)==='over')}).length;
+  h+='<div class="stats">'+stat('Positions in post',String(active.length),list.length-active.length+' ended or not yet started')+
+    stat('Monthly salary bill (KES)',sal?nfmt(bill):'Hidden','October 2026'+(sal?'':', salary detail is hidden for your role'))+
+    stat('Paid from restricted grants',sal?(totCost?Math.round(grantCost/totCost*100)+'%':'0%'):'Hidden','the rest is unrestricted money')+
+    '<div class="stat'+(fix?' neg':'')+'"><small>Positions to fix</small><strong>'+fix+'</strong><span>'+(fix?'funding does not add up to 100%':'every position adds up to 100%')+'</span></div></div>';
+  /* the salary plan against what each grant budgeted for personnel */
+  if(sal){
+    var rows=GRANTS.filter(function(g){return persBudgetKES(g.id)>0||cost[g.id]}).map(function(g){
+      var pl=cost[g.id]||0,bu=persBudgetKES(g.id),r=bu?pl/bu:0,st=!bu?['none','No budget']:r>1?['crit','Plan exceeds the budget']:r>=0.85?['good','Covered']:['warn','Budget not fully planned'];
+      return'<tr><td>'+esc(g.name)+'</td><td class="num">'+nfmt(pl)+'</td><td class="num">'+nfmt(bu)+'</td><td><div class="usedcell"><div class="bar'+(r>1?' over':'')+'" style="flex:1"><i class="a" style="width:'+Math.min(100,r*100)+'%"></i></div><span>'+Math.round(r*100)+'%</span></div></td><td><span class="pill '+st[0]+'">'+st[1]+'</span></td></tr>';
+    }).join('');
+    h+='<div class="panel"><h2>Salary plan against the personnel budget, FY2026 (KES)</h2><div class="scroll"><table class="st" style="min-width:620px"><thead><tr><th>Funding source</th><th class="num">Salary plan</th><th class="num">Personnel budget</th><th>Plan as a share of budget</th><th>Status</th></tr></thead><tbody>'+rows+
+      '<tr><td>Unrestricted (core)</td><td class="num">'+nfmt(cost.CORE||0)+'</td><td class="num muted">not budgeted by a donor</td><td></td><td></td></tr></tbody></table></div><p class="note" style="margin-bottom:0">The plan adds up salary × percent for every month a position is in post and funded. The budget’s personnel line also covers allowances, so a plan a little under the budget is normal.</p></div>';
+  }
+  h+=msgBar('staff');
+  var hubOpts='<option value="">All hubs you can see</option>'+HUBS.filter(function(x){return roleHubOK(x.id)}).map(function(x){return'<option value="'+x.id+'"'+(S.scope===x.id?' selected':'')+'>'+x.name+'</option>'}).join('');
+  h+='<div class="row"><div class="field"><label for="st-scope">Hub</label><select id="st-scope" data-change="scope"'+(role().hubs.length===1?' disabled':'')+'>'+hubOpts+'</select></div>'+(any?'<button class="btn" type="button" data-act="staffadd">Add a position</button>':'')+'</div>';
+  var trs=list.map(function(x){
+    var can=canHub(x.hub),st=posState(x),pill=x.status==='Ended'&&st==='ok'?'<span class="pill none">Ended</span>':st==='ok'?'<span class="pill ok">Adds up to 100%</span>':st==='none'?'<span class="pill none">Not in post in FY2026</span>':'<span class="pill '+(st==='over'?'crit':'warn')+'" title="'+esc(posProblem(x))+'">'+esc(posProblem(x))+'</span>';
+    return'<tr><td class="mono" style="width:96px">'+x.no+'<div style="margin-top:4px">'+ed('staff',x.no,'status',x.status,{can:can,sel:[['Active','Active'],['Ended','Ended']],label:'Status of '+x.no})+'</div></td>'+
+      '<td style="min-width:170px"><div class="stk">'+ed('staff',x.no,'name',x.name,{can:can,label:'Name of '+x.no})+ed('staff',x.no,'title',x.title,{can:can,label:'Position of '+x.no})+'</div></td>'+
+      '<td style="width:128px;min-width:128px"><div class="stk">'+ed('staff',x.no,'type',x.type,{can:can,sel:[['Programme','Programme'],['Support','Support']],label:'Type of '+x.no})+
+        ed('staff',x.no,'hub',x.hub,{can:can,sel:HUBS.filter(function(hb){return roleHubOK(hb.id)}).map(function(hb){return[hb.id,hb.name]}),label:'Hub of '+x.no})+'</div></td>'+
+      '<td style="width:100px">'+(sal?ed('staff',x.no,'salary',nfmt(x.salary),{can:can,num:true,label:'Monthly salary of '+x.no}):'<span class="muted">Hidden</span>')+'</td>'+
+      '<td style="width:136px"><div class="stk">'+ed('staff',x.no,'start',x.start,{can:can,type:'date',label:'Contract start of '+x.no})+ed('staff',x.no,'end',x.end,{can:can,type:'date',label:'Contract end of '+x.no})+'</div></td>'+
+      '<td class="fcell" style="min-width:230px">'+fundChips(x)+'<div style="margin-top:4px">'+pill+'</div><div class="btns" style="margin-top:6px"><button class="btn sm" type="button" data-act="staffedit" data-arg="'+x.no+'">'+(can?'Edit funding':'View funding')+'</button>'+(can&&x.status==='Active'?'<button class="btn sm" type="button" data-act="staffrep" data-arg="'+x.no+'">Replace holder</button>':'')+'</div></td></tr>';
+  }).join('');
+  h+='<div class="panel"><div class="scroll"><table class="st tight" style="min-width:880px"><thead><tr><th>Emp. no and status</th><th>Name and position</th><th>Type and hub</th><th class="num">Monthly salary (KES)</th><th>Contract from and to</th><th>Funding</th></tr></thead><tbody>'+trs+'</tbody></table></div>'+
+    '<p class="note" style="margin-bottom:0">A * after a percentage means that share runs only for part of the year. Salary is shown to named roles only, and every change is logged.</p></div>';
+  h+=importPanel('staff',any);
+  return h+recentChanges();
+}
+function commitStaff(no,f,v){
+  var x=posById(no),msg='',what='';
+  if(!x||!canHub(x.hub))return{msg:'You cannot change this position.',what:''};
+  if(f==='name'||f==='title'){v=v.trim();if(!v)msg='The '+(f==='name'?'name':'position')+' cannot be empty.'}
+  else if(f==='salary'){v=parseNum(v);if(isNaN(v)||v<=0)msg='The salary must be a number above zero.'}
+  else if(f==='start'){if(!validDate(v))msg='Use a real date, written as YYYY-MM-DD.';else if(x.end&&x.end<v)msg='The contract cannot end before it starts.'}
+  else if(f==='end'){if(v!==''&&!validDate(v))msg='Use a real date written as YYYY-MM-DD, or leave it empty.';else if(v&&v<x.start)msg='The contract cannot end before it starts.'}
+  else if(f==='hub'){if(!canHub(v))msg='You can only move a position to a hub you work in.'}
+  if(msg)return{msg:msg,what:''};
+  x[f]=v;
+  if(f==='status'){if(v==='Ended'&&!x.end)x.end='2026-10-20';if(v==='Active'&&x.end&&x.end<'2026-10-21')x.end=''}
+  return{msg:'',what:'the '+f+' of '+no+(f==='salary'?' (details withheld)':' to '+v)};
+}
+function nextPosNo(){var n=1000;POSITIONS.forEach(function(x){var k=Number(x.no.slice(2));if(k>n)n=k});return'E-'+(n+1)}
+function prevDay(d){var p=d.split('-'),t=new Date(Number(p[0]),Number(p[1])-1,Number(p[2])-1);return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())}
+IMP.staff={
+  title:'Paste positions from Excel',header:'emp no',
+  help:'Columns: employee number (leave empty to number it automatically), name, position, type (Programme or Support), hub, monthly salary in KES, contract start, and contract end (optional). The new positions arrive with no funding, so open each one to share its salary across funding sources.',
+  placeholder:'E-1100\tAmina Njoroge\tField coordinator\tProgramme\tGarissa\t240000\t2026-11-01',
+  sample:'emp no\tname\tposition\ttype\thub\tsalary\tstart\tend\n\tJoy Chepkoech\tField coordinator\tProgramme\tGarissa\t240000\t2026-11-01\t\nE-1001\tDuplicate number\tClerk\tSupport\tNBO\t90000\t2026-11-01\t\n\tLeo Karanja\tData clerk\tClerical\tNairobi\t90000\t2026-11-01\t\n\tRita Wafula\tData clerk\tSupport\tKisumu\tninety thousand\t2026-11-01\t',
+  parse:function(c,recs){
+    var no=c[0]||'';
+    if(no&&(posById(no)||recs.some(function(r){return r.no===no})))return{err:'The employee number '+no+' is already used.'};
+    if(!c[1])return{err:'The name is empty.'};
+    if(!c[2])return{err:'The position is empty.'};
+    var ty=(c[3]||'').toLowerCase()==='programme'?'Programme':(c[3]||'').toLowerCase()==='support'?'Support':'';
+    if(!ty)return{err:'The type must be Programme or Support.'};
+    var hb=HUBS.filter(function(x){var l=(c[4]||'').toLowerCase();return x.id.toLowerCase()===l||x.name.toLowerCase()===l})[0];
+    if(!hb)return{err:'"'+(c[4]||'')+'" is not one of your hubs.'};
+    if(!canHub(hb.id))return{err:'You cannot add positions in '+hb.name+'.'};
+    var sl=parseNum(c[5]);if(isNaN(sl)||sl<=0)return{err:'The salary must be a number above zero.'};
+    if(!validDate(c[6]))return{err:'The contract start must be a real date written as YYYY-MM-DD.'};
+    if(c[7]&&(!validDate(c[7])||c[7]<c[6]))return{err:'The contract end must be a real date after the start, or empty.'};
+    return{rec:{no:no,name:c[1],title:c[2],type:ty,hub:hb.id,salary:sl,start:c[6],end:c[7]||'',status:'Active',splits:[]}};
+  },
+  apply:function(recs){
+    recs.forEach(function(r){if(!r.no)r.no=nextPosNo();POSITIONS.push(r)});
+    logIt('added '+recs.length+' position'+(recs.length>1?'s':'')+' from Excel, with no funding yet');toast(recs.length+' position'+(recs.length>1?'s':'')+' added. Open each one to set its funding.');
+  }
+};
+function renderStaffDrawer(d,host){
+  var x=posById(d.no);if(!x){S.drawer=null;host.innerHTML='';return}
+  var can=canHub(x.hub),sal=!!role().salary,h;
+  h='<div class="scrim" data-act="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dwt"><header><div style="flex:1;min-width:0"><div class="note">'+(d.kind==='replace'?'Replace the holder of':'Funding splits for')+' '+x.no+'</div><h2 id="dwt">'+esc(x.title)+', '+esc(hubName[x.hub])+'</h2><div class="note">'+esc(x.name)+(sal?' · KES '+nfmt(x.salary)+' a month':' · salary hidden for your role')+' · contract '+esc(x.start)+(x.end?' to '+esc(x.end):' onward')+'</div></div><button class="x" type="button" data-act="close" aria-label="Close">✕</button></header><div class="body">';
+  if(d.kind==='replace'){
+    h+='<p class="note" style="margin-top:0">The current holder’s contract ends the day before the new holder starts, and the new holder keeps the same position, hub and funding from that date, so cost history stays with each person.</p>'+
+      msgBar('rep')+'<div class="rb"><div class="field"><label for="rp-name">New holder’s name</label><input id="rp-name" class="ed" style="background:var(--surface);border-color:var(--line)" placeholder="Name"></div>'+
+      '<div class="field"><label for="rp-date">Starts on</label><input id="rp-date" type="date" class="ed" style="background:var(--surface);border-color:var(--line)" value="2026-11-01"></div>'+
+      '<div class="field"><label for="rp-sal">Monthly salary (KES)</label><input id="rp-sal" class="ed num" style="background:var(--surface);border-color:var(--line)" inputmode="numeric" value="'+(sal?nfmt(x.salary):'')+'"'+(sal?'':' disabled placeholder="Hidden"')+'></div></div>'+
+      '<div class="btns"><button class="btn primary" type="button" data-act="dorep" data-arg="'+x.no+'">Replace holder</button><button class="btn" type="button" data-act="close">Cancel</button></div>';
+  }else{
+    var cov=coverage(x),st=posState(x),prob=posProblem(x);
+    h+='<div class="strip" role="img" aria-label="Funding by month">'+cov.map(function(v,i){return'<i class="'+(v===null?'':v===100?'ok':v>100?'over':'gap')+'" title="'+MONTHS[i]+': '+(v===null?'not in post':v+'%')+'"></i>'}).join('')+'</div>'+
+      '<div class="strip note" style="gap:3px;margin:2px 0 10px">'+MONTHS.map(function(m){return'<span style="width:14px;font-size:9px;text-align:center">'+m[0]+'</span>'}).join('')+'</div>'+
+      '<p class="note" role="status" style="margin-top:0">'+(st==='ok'?'<span class="pill ok">Adds up to 100% in every month in post</span>':st==='none'?'Not in post during FY2026.':'<span class="pill '+(st==='over'?'crit':'warn')+'">'+esc(prob)+'</span> Each month the splits must total 100%.')+'</p>';
+    if(!can)h+='<div class="banner info">Your role can read this but not change it.</div>';
+    h+='<div class="scroll"><table class="st tight" style="min-width:560px"><thead><tr><th>Funding source</th><th class="num">Percent</th><th>From</th><th>To</th><th></th></tr></thead><tbody>'+
+      x.splits.map(function(sp,i){
+        return'<tr><td style="min-width:170px"><select class="ed" id="sd-'+i+'-src" data-change="sd" data-i="'+i+'" data-f="src" aria-label="Funding source"'+(can?'':' disabled')+'>'+srcOptions().map(function(o){return'<option value="'+o[0]+'"'+(sp.src===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select></td>'+
+          '<td style="width:90px"><input class="ed num" id="sd-'+i+'-pct" inputmode="numeric" data-change="sd" data-i="'+i+'" data-f="pct" value="'+sp.pct+'" aria-label="Percent of time"'+(can?'':' disabled')+'></td>'+
+          '<td style="width:132px"><input class="ed" type="date" id="sd-'+i+'-from" data-change="sd" data-i="'+i+'" data-f="from" value="'+esc(sp.from)+'" aria-label="From"'+(can?'':' disabled')+'></td>'+
+          '<td style="width:132px"><input class="ed" type="date" id="sd-'+i+'-to" data-change="sd" data-i="'+i+'" data-f="to" value="'+esc(sp.to)+'" aria-label="To"'+(can?'':' disabled')+'></td>'+
+          '<td>'+(can?'<button class="btn sm" type="button" data-act="sddel" data-arg="'+i+'" aria-label="Remove this split">Remove</button>':'')+'</td></tr>'}).join('')+
+      (x.splits.length?'':'<tr><td colspan="5" class="muted">No funding set yet.</td></tr>')+'</tbody></table></div>'+msgBar('split');
+    if(can)h+='<div class="btns" style="margin-top:10px"><button class="btn" type="button" data-act="sdadd">Add a funding source</button><button class="btn" type="button" data-act="sdbal">Balance to 100%</button></div>'+
+      '<p class="note">Leave From and To empty for the whole contract. Use dates to move a position from one grant to another part-way through the year. Changes are logged.</p>';
+  }
+  h+='</div></aside>';
+  host.innerHTML=h;
+  var c=host.querySelector('.x');if(c&&!document.activeElement.id)c.focus();
 }
 
 /* ---------- rendering and events ---------- */
 function render(){
-  recompute();chrome();
-  var h=S.view==='budgets'?renderBudgets():S.view==='ledger'?renderLedger():S.view==='maps'?renderMaps():renderBVA();
+  refreshNames();recompute();chrome();
+  var h=S.view==='budgets'?renderBudgets():S.view==='ledger'?renderLedger():S.view==='maps'?renderMaps():S.view==='funding'?renderFunding():S.view==='staff'?renderStaff():renderBVA();
   $('main').innerHTML=h;
   if(S.view==='budgets')patchGrid();
   renderDrawer();
@@ -781,20 +1522,125 @@ document.addEventListener('click',function(ev){
   else if(act==='approve'){b=B[bkey()];b.approved=clone(b.draft);b.approved.IND=indirect(b.approved);b.version++;b.status='approved';logIt('approved '+grantName[S.bg]+', '+hubName[S.bh]+' as v'+b.version);toast('Approved as v'+b.version+'. Budget vs actual now uses it.');render()}
   else if(act==='return'){B[bkey()].status='draft';logIt('returned '+grantName[S.bg]+', '+hubName[S.bh]+' to the hub');toast('Returned to the hub for changes.');render()}
   else if(act==='discard'){b=B[bkey()];b.draft=clone(b.approved);b.status='approved';logIt('discarded draft changes for '+grantName[S.bg]+', '+hubName[S.bh]);render()}
+  else if(act==='staffedit'){S.drawer={kind:'staff',no:arg};render()}
+  else if(act==='staffrep'){S.drawer={kind:'replace',no:arg};S.msg.rep='';render()}
+  else if(act==='staffadd'){
+    var hb=role().hubs[0],np={no:nextPosNo(),name:'New holder',title:'New position',type:'Programme',hub:hb,salary:200000,start:'2026-11-01',end:'',status:'Active',splits:[]};
+    if(S.scope&&canHub(S.scope))np.hub=S.scope;
+    POSITIONS.push(np);logIt('added position '+np.no+' in '+hubName[np.hub]);S.drawer={kind:'staff',no:np.no};render();
+  }
+  else if(act==='sdadd'){
+    var sx=posById(S.drawer.no);if(!sx||!canHub(sx.hub))return;
+    var used=sx.splits.map(function(q2){return q2.src}),free=srcOptions().filter(function(o){return used.indexOf(o[0])<0})[0],left=Math.max(0,100-sx.splits.reduce(function(t,q2){return t+(Number(q2.pct)||0)},0));
+    sx.splits.push({src:free?free[0]:'CORE',pct:left,from:'',to:''});logIt('added a funding source to '+sx.no);render();
+  }
+  else if(act==='sddel'){var sy=posById(S.drawer.no);if(!sy||!canHub(sy.hub))return;var gone=sy.splits.splice(Number(arg),1)[0];logIt('removed '+gone.src+' funding from '+sy.no);render()}
+  else if(act==='sdbal'){
+    var sz=posById(S.drawer.no);if(!sz||!canHub(sz.hub)||!sz.splits.length){toast('Add a funding source first.');return}
+    var cv=coverage(sz),first=cv.filter(function(v){return v!==null})[0],last=sz.splits[sz.splits.length-1];
+    if(first===undefined){toast('This position is not in post during FY2026.');return}
+    last.pct=Math.max(0,Math.min(100,(Number(last.pct)||0)+100-first));logIt('balanced the funding of '+sz.no+' to 100%');render();
+  }
+  else if(act==='dorep'){
+    var old=posById(arg);if(!old||!canHub(old.hub))return;
+    var rn=($('rp-name').value||'').trim(),rd=$('rp-date').value,rs=role().salary?parseNum($('rp-sal').value):old.salary,rm='';
+    if(!rn)rm='Give the new holder\u2019s name.';
+    else if(!validDate(rd))rm='Choose a real start date.';
+    else if(rd<=old.start)rm='The new holder must start after the current contract started.';
+    else if(isNaN(rs)||rs<=0)rm='The salary must be a number above zero.';
+    S.msg.rep=rm;
+    if(rm){render();return}
+    old.end=prevDay(rd);old.status='Ended';
+    var nw={no:nextPosNo(),name:rn,title:old.title,type:old.type,hub:old.hub,salary:rs,start:rd,end:'',status:'Active',splits:old.splits.map(function(sp){return{src:sp.src,pct:sp.pct,from:(sp.from&&sp.from>rd)?sp.from:'',to:sp.to}})};
+    POSITIONS.push(nw);logIt('replaced the holder of '+old.no+' with '+nw.no+' from '+rd);toast('Replaced. '+old.no+' ended on '+old.end+'; '+nw.no+' starts on '+rd+'.');S.drawer=null;render();
+  }
+  else if(act==='fsel'){S.fs=arg;render()}
+  else if(act==='gomap'){S.view='maps';S.mt=arg;S.drawer=null;render();window.scrollTo(0,0)}
+  else if(act==='fmk'){
+    if(!canSetup())return;
+    HUBS.forEach(function(hb){var key=S.fs+'|'+hb.id;if(!B[key])B[key]={approved:emptyBudget(),draft:emptyBudget(),status:'draft',version:0}});
+    logIt('created empty draft budgets for '+grantName[S.fs]+' in every hub');toast('Empty drafts created. Fill them on the Budgets screen.');render();
+  }
+  else if(act==='fadd'){
+    if(!canSetup())return;
+    var fc=($('fa-code').value||'').trim().toUpperCase(),fn=($('fa-name').value||'').trim(),fd=($('fa-donor').value||'').trim()||'Donor to be confirmed',fs=$('fa-start').value,fe=$('fa-end').value,ft=parseNum($('fa-total').value),fm='';
+    if(!/^[A-Z0-9]{2,6}$/.test(fc))fm='The code must be 2 to 6 letters or digits.';
+    else if(grantById(fc))fm='The code '+fc+' is already used.';
+    else if(!fn)fm='Give the funding source a name.';
+    else if(!validDate(fs)||!validDate(fe))fm='Choose real start and end dates.';
+    else if(fe<=fs)fm='The end date must be after the start date.';
+    else if(isNaN(ft)||ft<=0)fm='The total award must be a number above zero.';
+    S.msg.fund=fm?'New funding source: '+fm:'';
+    if(fm){render();return}
+    GRANTS.push({id:fc,name:fn,donor:fd,currency:'USD',start:fs,end:fe,total:ft,status:'Active'});refreshNames();S.fs=fc;
+    applyRuleChange([{target:'grant',when:[{f:'grant',v:fc}],value:fc,note:'New funding source'}],[],'added funding source '+fc+' ('+fn+')');render();
+  }
+  else if(act==='actadd'){
+    if(!canSetup())return;
+    var ac=($('aa-code').value||'').trim().toUpperCase(),an=($('aa-name').value||'').trim(),ath=$('aa-theme').value,ab=parseNum($('aa-budget').value||'0'),am='',aid=S.fs+'-'+ac;
+    if(!/^[A-Z0-9-]{3,14}$/.test(ac))am='The type code must be 3 to 14 letters, digits or dashes.';
+    else if(actById(aid))am='This grant already has an activity of type '+ac+'.';
+    else if(!an)am='Give the activity a name.';
+    else if(isNaN(ab))am='The planning budget must be a number.';
+    S.msg.act=am?'New activity: '+am:'';
+    if(am){render();return}
+    ACTS.push({id:aid,grant:S.fs,type:ac,name:an,theme:ath,status:'Active',budget:ab,w:1});
+    applyRuleChange([{target:'act',when:[{f:'act',v:ac},{f:'grant',v:S.fs}],value:aid,note:'New activity'}],[],'added activity '+aid+' to '+grantName[S.fs]);render();
+  }
+  else if(act==='actdel'){
+    if(!canSetup())return;var da=actById(arg);if(!da)return;
+    var gone=RULES.filter(function(r){return r.target==='act'&&r.value===arg}).map(function(r){return r.id});
+    ACTS.splice(ACTS.indexOf(da),1);applyRuleChange([],gone,'removed activity '+arg);render();
+  }
+  else if(act==='tab'){var tp=arg.split(':');S[tp[0]]=tp[1];S.rm='';S.mx=null;render()}
   else if(act==='fix'){
-    var id=Number(arg),e=entries.filter(function(x){return x.id===id})[0],m=e.map,rem=$('fx-r-'+id),remember=rem?rem.checked:false,n=0;
+    if(!role().edit||S.offline){toast('Resolving a mapping needs edit rights and a connection.');return}
+    var id=Number(arg),e=entryById(id),m=e.map,rem=$('fx-r-'+id),remember=rem?rem.checked:false;
     if(m.need==='grant'){
       var gv=$('fx-g-'+id).value;if(!gv){toast('Choose a grant first.');return}
-      if(remember&&!m.blank){grantMap[e.grant]=gv;added.grant[e.grant]=true}
-      else{var ln=acctMap[e.acct];over[id]={ok:true,grant:gv,hub:ccMap[e.cc],line:ln}}
+      if(remember&&!m.blank)applyRuleChange([{target:'grant',when:[{f:'grant',v:e.grant}],value:gv,note:'From Needs attention'}],[],'added a rule: grant code '+e.grant+' to '+grantName[gv]);
+      else{over[id]={grant:gv};recompute();logIt('mapped entry '+id+' to '+grantName[gv]);toast('Entry '+id+' mapped to '+grantName[gv]+'.')}
     }else if(m.need==='line'){
       var lv=$('fx-l-'+id).value;if(!lv){toast('Choose a budget line first.');return}
-      if(remember){acctMap[e.acct]=lv;added.acct[e.acct]=true}
-      else over[id]={ok:true,grant:grantMap[e.grant],hub:ccMap[e.cc],line:lv};
+      if(remember)applyRuleChange([{target:'line',when:[{f:'acct',v:e.acct}],value:lv,note:'From Needs attention'}],[],'added a rule: account '+e.acct+' to '+lineName[lv]);
+      else{over[id]={line:lv};recompute();logIt('mapped entry '+id+' to '+lineName[lv]);toast('Entry '+id+' mapped to '+lineName[lv]+'.')}
     }
-    var before=unm.length;recompute();n=before-unm.length;
-    logIt('mapped '+n+' ledger entr'+(n===1?'y':'ies'));
-    toast(n+' entr'+(n===1?'y':'ies')+' mapped and now counted in budget vs actual.');render();
+    render();
+  }
+  else if(act==='rbadd'){S.rb.conds.push({f:'acct',v:''});render()}
+  else if(act==='rbdel'){S.rb.conds.splice(Number(arg),1);render()}
+  else if(act==='rbclear'){S.rb={target:S.rb.target,conds:[{f:'acct',v:''}],value:'',prio:0};render()}
+  else if(act==='rbsave'){
+    var bs=builderState();if(!bs.rule||!canSetup())return;
+    applyRuleChange([{target:bs.rule.target,when:bs.rule.when,value:bs.rule.value,prio:bs.rule.prio}],[],'added a rule: '+TARGET_LABEL[bs.rule.target].toLowerCase()+' = '+valueLabel(bs.rule.target,bs.rule.value)+' when '+condText(bs.rule));
+    S.rb={target:S.rb.target,conds:[{f:'acct',v:''}],value:'',prio:0};render();
+  }
+  else if(act==='rmask'){S.rm=arg;render()}
+  else if(act==='rmcancel'){S.rm='';render()}
+  else if(act==='rmok'){var rr=RULES.filter(function(x){return x.id===S.rm})[0];if(rr&&canSetup()){applyRuleChange([],[rr.id],'removed rule '+rr.id+' ('+condText(rr)+')')}S.rm='';render()}
+  else if(act==='mxcancel'){S.mx=null;render()}
+  else if(act==='mxapply'){
+    if(!S.mx||!canSetup())return;var pl=mxPlan(S.mx);
+    applyRuleChange(pl.adds,pl.removes,'changed the budget line for account '+S.mx.a+(S.mx.g?' on '+grantName[S.mx.g]:' (default for all grants)'));
+    S.mx=null;render();
+  }
+  else if(act==='cbadd'){
+    if(!canSetup())return;
+    var code=($('cb-'+arg+'-code').value||'').trim(),val=$('cb-'+arg+'-val').value;
+    if(!code||!val){toast('Give the ledger code and choose what it maps to.');return}
+    var tgt=arg==='act'?'act':arg==='cc'?'hub':'grant',lab=arg==='cc'?'Cost centre':arg==='grant'?'Grant code':'Activity code',when=[{f:arg,v:code}];
+    if(arg==='act')when.push({f:'grant',v:actById(val).grant});
+    if(RULES.some(function(r){return r.target===tgt&&sameConds(r.when,when)})){toast(lab+' '+code+' is already mapped'+(arg==='act'?' for that grant':'')+'. Remove its rule first.');return}
+    applyRuleChange([{target:tgt,when:when,value:val,note:'Added on the Codes tab'}],[],'added a rule: '+lab.toLowerCase()+' '+code+(arg==='act'?' with grant '+when[1].v:'')+' to '+valueLabel(tgt,val));
+    render();
+  }
+  else if(act==='spopen'){(S.sp[arg]=S.sp[arg]||{text:'',res:null}).open=true;render()}
+  else if(act==='spclose'){S.sp[arg].open=false;render()}
+  else if(act==='spsample'){S.sp[arg].text=IMP[arg].sample;S.sp[arg].res=null;render()}
+  else if(act==='spcheck'){S.sp[arg].res=runImport(arg);render()}
+  else if(act==='spapply'){
+    var rs=runImport(arg);if(!rs.recs.length)return;
+    IMP[arg].apply(rs.recs);S.sp[arg].res=null;S.sp[arg].text='';S.sp[arg].open=false;render();
   }
 });
 document.addEventListener('change',function(ev){
@@ -806,6 +1652,22 @@ document.addEventListener('change',function(ev){
   else if(c==='bgrant'){S.bg=t.value;render()}
   else if(c==='bhub'){S.bh=t.value;render()}
   else if(c==='compare'){S.compare=t.checked;patchGrid()}
+  else if(c==='sd'){
+    var sp0=posById(S.drawer&&S.drawer.no);if(!sp0||!canHub(sp0.hub))return;
+    var si=Number(t.getAttribute('data-i')),sf=t.getAttribute('data-f'),sv=t.value,sm='',row=sp0.splits[si];
+    if(sf==='pct'){var pv=parseNum(sv);if(isNaN(pv)||pv>100)sm='Percent must be a number from 0 to 100.';else sv=pv}
+    else if(sf==='from'||sf==='to'){if(sv!==''&&!validDate(sv))sm='Use a real date, or leave it empty.';else if(sf==='from'&&sv&&row.to&&row.to<sv||sf==='to'&&sv&&row.from&&row.from>sv)sm='The end of a split cannot be before its start.'}
+    S.msg.split=sm;
+    if(!sm){row[sf]=sv;logIt('changed '+sf+' of a funding split on '+sp0.no)}
+    setTimeout(renderKeep,0);
+  }
+  else if(c==='ed'){commitEdit(t.getAttribute('data-t'),t.getAttribute('data-id'),t.getAttribute('data-f'),t.value)}
+  else if(c==='rb'){var k=t.getAttribute('data-k');S.rb[k]=t.value;if(k==='target')S.rb.value='';setTimeout(renderKeep,0)}
+  else if(c==='rbc'){var ci=Number(t.getAttribute('data-i')),ck2=t.getAttribute('data-k');S.rb.conds[ci][ck2]=t.value;setTimeout(renderKeep,0)}
+  else if(c==='mx'){
+    var ma=t.getAttribute('data-a'),mg=t.getAttribute('data-g'),cur=acctRule(ma,mg),curv=cur?cur.value:'*';
+    S.mx=t.value===curv?null:{a:ma,g:mg,v:t.value};setTimeout(renderKeep,0);
+  }
   else if(c==='budgetfile'||c==='ledgerfile'){
     var fl=t.files&&t.files[0];if(!fl)return;
     var rd=new FileReader();
@@ -822,6 +1684,7 @@ document.addEventListener('change',function(ev){
 document.addEventListener('input',function(ev){
   var t=ev.target,c=t.getAttribute&&t.getAttribute('data-input');if(!c)return;
   if(c==='paste'){S.pasteText=t.value;return}
+  if(c==='sp'){var sk=t.getAttribute('data-k');S.sp[sk].text=t.value;S.sp[sk].res=null;return}
   if(c==='cell'){
     var l=t.getAttribute('data-l'),i=Number(t.getAttribute('data-i')),v=parseNum(t.value);
     if(isNaN(v)){t.setAttribute('aria-invalid','true');return}
@@ -845,7 +1708,7 @@ document.addEventListener('focusout',function(ev){
 });
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&S.drawer){S.drawer=null;renderDrawer()}});
 
-try{var hsh=(location.hash||'').replace('#','');if(['bva','budgets','ledger','maps'].indexOf(hsh)>-1)S.view=hsh}catch(e){}
+try{var hsh=(location.hash||'').replace('#','');if(VIEW_IDS.indexOf(hsh)>-1)S.view=hsh}catch(e){}
 try{var th=localStorage.getItem('mizani-theme');if(th==='dark'||th==='light')S.theme=th}catch(e){}
 document.documentElement.setAttribute('data-theme',S.theme);
 S.queue={};
