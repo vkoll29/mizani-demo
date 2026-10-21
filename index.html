@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="A clickable prototype of Mizani, a grant finance workspace for NGOs. Every figure in it is invented.">
+<title>Mizani</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: slim header with working controls, left rail for the four working screens, one main area, a ledger drawer that slides over from the right. */
+:root{
+  --bg:#F5F1EB; --surface:#FFFFFF; --surface2:#ECE5DC; --ink:#2B211A; --muted:#6B5D52; --line:#DDD2C6;
+  --accent:#6B4A32; --accent-soft:#EFE3D6; --accent-ink:#FFFFFF;
+  --good:#17754A; --good-bg:#DDF3E6; --warn:#8F5200; --warn-bg:#FCEFD0; --crit:#B42318; --crit-bg:#FDE2DE;
+  --shadow:0 8px 30px rgba(43,33,26,.18);
+  --display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+:root[data-theme="dark"]{
+  --bg:#1B1612; --surface:#251E19; --surface2:#2F2620; --ink:#F2EBE4; --muted:#B9A99B; --line:#3C3029;
+  --accent:#D8B08C; --accent-soft:#3A2B20; --accent-ink:#1B1612;
+  --good:#5BD08E; --good-bg:#12332A; --warn:#F0B24B; --warn-bg:#3A2C10; --crit:#FF8A80; --crit-bg:#3F1C1A;
+  --shadow:0 8px 30px rgba(0,0,0,.5); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.shell{max-width:1240px;margin:0 auto}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type="checkbox"]{accent-color:var(--accent)}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:6px 0 14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand b{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em;line-height:1}
+.org{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.org span:first-child{font-weight:600}
+.org span:last-child{color:var(--muted);font-size:12.5px}
+.spacer{flex:1}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.field{display:flex;flex-direction:column;gap:2px}
+.field label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 28px 6px 10px;min-height:34px;max-width:100%}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 12px;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.banner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:8px;margin-bottom:14px;border:1px solid var(--line);background:var(--surface)}
+.banner.warn{background:var(--warn-bg);border-color:transparent;color:var(--ink)}
+.banner.info{background:var(--accent-soft);border-color:transparent}
+.banner button{margin-left:auto}
+
+/* layout */
+.layout{display:grid;grid-template-columns:208px minmax(0,1fr);gap:24px;align-items:start}
+.rail{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px}
+.rail button{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;border:0;background:transparent;padding:9px 12px;border-radius:6px;font-weight:500}
+.rail button:hover{background:var(--surface2)}
+.rail button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail .badge{background:var(--crit);color:var(--surface);border-radius:99px;font-size:11.5px;min-width:20px;text-align:center;padding:0 6px}
+.rail h6{margin:16px 12px 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.rail .later{padding:6px 12px;color:var(--muted);font-size:13px}
+main{min-width:0}
+h1{font-family:var(--display);font-size:26px;line-height:1.15;letter-spacing:-.01em;margin:0 0 4px;text-wrap:balance}
+h2{font-family:var(--display);font-size:18px;margin:0 0 8px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 16px;max-width:70ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;min-width:0}
+.panel>h2:first-child{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end;margin-bottom:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat small{display:block;color:var(--muted);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase}
+.stat strong{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat span{color:var(--muted);font-size:12px}
+.stat.neg strong{color:var(--crit)}
+
+/* tables */
+.scroll{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%}
+.tbl{min-width:820px}
+.tbl th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th.num{text-align:right}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr.l1 td{font-weight:600;background:var(--surface)}
+.tbl tr.l2 td{background:var(--surface2)}
+.tbl tr.l2 td:first-child{padding-left:38px}
+.tbl tr.tot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0}
+.tbl tr.l2:hover td,.tbl tr.l1:hover td{background:var(--accent-soft)}
+.name{display:flex;align-items:center;gap:8px}
+.name small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.chev{border:0;background:transparent;width:24px;height:24px;border-radius:4px;color:var(--muted);flex:none;line-height:1}
+.chev:hover{background:var(--line)}
+.link{border:0;background:transparent;padding:0;color:var(--accent);text-align:left;text-decoration:underline;text-underline-offset:2px;font-weight:inherit}
+.neg{color:var(--crit)}
+.bar{position:relative;height:10px;background:var(--surface2);border:1px solid var(--line);border-radius:3px;min-width:110px}
+.l2 .bar{background:var(--surface)}
+.bar i{position:absolute;top:0;bottom:0;left:0}
+.bar .a{background:var(--accent)}
+.bar .c{background:repeating-linear-gradient(135deg,var(--accent) 0 3px,transparent 3px 6px);opacity:.55}
+.bar .p{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.bar.over{border-color:var(--crit)}
+.usedcell{display:flex;align-items:center;gap:8px}
+.usedcell span{width:40px;text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.crit{background:var(--crit-bg);color:var(--crit)}
+.pill.none{background:var(--surface2);color:var(--muted)}
+.pill.ok::before,.pill.fix::before{display:none}
+.pill.ok{background:var(--good-bg);color:var(--good)}
+.pill.fix{background:var(--crit-bg);color:var(--crit)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--muted);font-size:12.5px;margin:6px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:8px;border-radius:2px}
+.sw.a{background:var(--accent)}.sw.c{background:repeating-linear-gradient(135deg,var(--accent) 0 3px,transparent 3px 6px);border:1px solid var(--accent)}
+.sw.p{width:2px;height:12px;background:var(--ink)}
+
+/* chart */
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:11.5px;font-family:var(--body)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .bud{fill:none;stroke:var(--muted);stroke-width:1.75;stroke-dasharray:5 4}
+.chart .act{fill:none;stroke:var(--accent);stroke-width:2.75;stroke-linejoin:round}
+.chart .dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.chart .lbl{fill:var(--ink);font-weight:600}
+
+/* budgets grid */
+.grid{min-width:1060px}
+.grid th{font-size:11.5px;color:var(--muted);font-weight:500;padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
+.grid th:first-child,.grid tbody th{text-align:left;white-space:nowrap;padding-right:12px}
+.grid tbody th{font-weight:500;font-size:13.5px;padding-block:3px;border-bottom:1px solid var(--line)}
+.grid td{padding:3px 2px;border-bottom:1px solid var(--line)}
+.cell{width:68px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid transparent;background:var(--surface2);border-radius:4px;padding:5px 6px}
+.cell:hover:not(:disabled){border-color:var(--line)}
+.cell:disabled{background:transparent;color:var(--ink);opacity:1}
+.cell.chg{background:var(--warn-bg);border-color:var(--warn)}
+.calc{padding:5px 8px!important;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.grid td.tot{font-weight:600;padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.grid tr.sum td,.grid tr.sum th{border-top:2px solid var(--line);font-weight:600}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 14px;min-height:34px;font-weight:500}
+.btn:hover:not(:disabled){background:var(--surface2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+textarea{width:100%;min-height:120px;font-family:var(--mono);font-size:12.5px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:8px}
+.note{font-size:12.5px;color:var(--muted)}
+.log{margin:0;padding:0;list-style:none;font-size:13px}
+.log li{padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+.log li span:first-child{color:var(--muted);min-width:70px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.cols .panel{margin-bottom:0}
+
+/* simple tables */
+.st{min-width:560px}
+.st th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:500;text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.st td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.st th.inm,.st td.inm{background:var(--accent-soft)}
+.fixrow select{min-height:30px;padding:3px 24px 3px 8px}
+.fixrow label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin:4px 0}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(27,22,18,.45);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+.drawer header h2{margin:0;flex:1}
+.drawer .body{padding:14px 18px;overflow:auto;flex:1}
+.x{border:1px solid var(--line);background:var(--surface);border-radius:6px;width:34px;height:34px;flex:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(20px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:40;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+
+@media (max-width:880px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:12px}
+  .rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+  .rail button{white-space:nowrap}
+  .rail h6,.rail .later{display:none}
+  .spacer{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .drawer{animation:slide .18s ease-out}
+  @keyframes slide{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+}
+</style>
+<style>
+/* what the claude.ai page wrapper normally supplies */
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand">
+      <b>Mizani</b>
+    </div>
+    <div class="org"><span>Demo NGO, Kenya Country Office</span><span>FY2026, January to December, closed to September</span></div>
+    <span class="tag" title="Every figure in this prototype is invented">Synthetic data</span>
+    <div class="spacer"></div>
+    <div class="ctl">
+      <div class="field"><label for="role">Viewing as</label>
+        <select id="role" data-change="role"></select></div>
+      <div class="field"><label id="curl">Show amounts in</label>
+        <div class="seg" role="group" aria-labelledby="curl">
+          <button type="button" data-act="cur" data-arg="USD" id="cur-USD">USD</button>
+          <button type="button" data-act="cur" data-arg="KES" id="cur-KES">KES</button></div></div>
+      <div class="field"><label id="thl">Theme</label>
+        <div class="seg" role="group" aria-labelledby="thl">
+          <button type="button" data-act="theme" data-arg="light" id="th-light">Light</button>
+          <button type="button" data-act="theme" data-arg="dark" id="th-dark">Dark</button></div></div>
+      <div class="field"><label id="conl">Connection</label>
+        <div class="seg" role="group" aria-labelledby="conl">
+          <button type="button" data-act="net" data-arg="on" id="net-on">Online</button>
+          <button type="button" data-act="net" data-arg="off" id="net-off">Offline</button></div></div>
+    </div>
+  </div>
+
+  <div id="banners"></div>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Screens" id="rail"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<div id="drawerHost"></div>
+<div id="toastHost" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- constants and synthetic data ---------- */
+var FX=130, CLOSED=9;
+var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var HUBS=[{id:'NBO',name:'Nairobi'},{id:'GRS',name:'Garissa'},{id:'KSM',name:'Kisumu'}];
+var GRANTS=[
+  {id:'NUT',name:'Child Nutrition',donor:'Bilateral donor A',span:'Jan 2025 to Dec 2027'},
+  {id:'WSH',name:'Water and Hygiene',donor:'Foundation B',span:'Jul 2025 to Jun 2027'},
+  {id:'EDU',name:'Girls Education',donor:'Trust C',span:'Jan 2026 to Dec 2028'}];
+var LINES=[
+  {id:'PER',name:'Personnel'},{id:'TRV',name:'Travel and transport'},{id:'SUP',name:'Supplies and equipment'},
+  {id:'PTN',name:'Partner grants'},{id:'IND',name:'Indirect costs (10%)'}];
+var ROLES=[
+  {id:'cfl',name:'Country finance lead',hubs:['NBO','GRS','KSM'],edit:true,approve:true,salary:true,short:'Country lead'},
+  {id:'hfm',name:'Garissa hub finance manager',hubs:['GRS'],edit:true,approve:false,salary:true,short:'Garissa manager'},
+  {id:'pm',name:'Programme manager (read-only)',hubs:['NBO','GRS','KSM'],edit:false,approve:false,salary:false,short:'Programme manager'}];
+var ACCT_NAME={'5100':'Salaries','5110':'Staff allowances','5200':'Travel and fuel','5300':'Supplies','5350':'Training costs','5400':'Equipment','5500':'Partner transfers','5900':'Indirect allocation'};
+var hubName={},grantName={},lineName={};
+HUBS.forEach(function(h){hubName[h.id]=h.name});GRANTS.forEach(function(g){grantName[g.id]=g.name});LINES.forEach(function(l){lineName[l.id]=l.name});
+
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var rnd=rng(2026);
+function pad(n){return n<10?'0'+n:''+n}
+function spread(total){var q=Math.floor(total/12),a=[],i;for(i=0;i<12;i++)a.push(q);a[11]+=total-q*12;return a}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function indirect(m){var a=[],i,cum=0,prev=0;for(i=0;i<12;i++){cum+=m.PER[i]+m.TRV[i]+m.SUP[i]+m.PTN[i];var c=Math.round(0.1*cum);a.push(c-prev);prev=c}return a}
+function sum(a,n){if(!a)return 0;var s=0,i,e=n==null?12:n;for(i=0;i<e&&i<a.length;i++)s+=a[i];return s}
+
+var BASE={
+  'NUT|GRS':{PER:96000,TRV:30000,SUP:84000,PTN:48000},
+  'NUT|NBO':{PER:60000,TRV:14000,SUP:36000,PTN:30000},
+  'WSH|GRS':{PER:72000,TRV:24000,SUP:120000,PTN:36000},
+  'WSH|KSM':{PER:54000,TRV:18000,SUP:96000,PTN:24000},
+  'EDU|KSM':{PER:66000,TRV:20000,SUP:48000,PTN:40000},
+  'EDU|NBO':{PER:78000,TRV:16000,SUP:30000,PTN:36000}};
+/* BASE is the original size in USD; SCALE brings the demo to about USD 4.5 million (KES 590 million) a year */
+var SCALE=3.5;
+var B={};
+Object.keys(BASE).forEach(function(k){
+  var m={};['PER','TRV','SUP','PTN'].forEach(function(l){m[l]=spread(Math.round(BASE[k][l]*SCALE))});m.IND=indirect(m);
+  B[k]={approved:m,draft:clone(m),status:'approved',version:2};
+});
+/* how closely each cell follows its budget; anything missing runs at 96% */
+var F={'NUT|GRS|SUP':1.18,'NUT|GRS|PER':1.02,'WSH|GRS|TRV':0.5,'WSH|KSM|SUP':1.12,'EDU|KSM|PTN':0.35,'EDU|NBO|PER':1.04,'NUT|NBO|PTN':0.8};
+function fac(k){return F[k]!=null?F[k]:0.96}
+var DESCR={
+  '5100':['Salaries, programme staff'],
+  '5110':['Staff allowances'],
+  '5200':['Field travel and fuel','Vehicle hire','Per diem, field visit','Fuel for programme vehicles','Staff transport, monitoring visit','Airfare and accommodation'],
+  '5300':{NUT:['Therapeutic food and supplements','Micronutrient supplements','Nutrition screening kits','Cold chain consumables'],
+          WSH:['Pipes, pumps and fittings','Borehole drilling materials','Water treatment chemicals','Sanitation slabs and latrine kits'],
+          EDU:['Learning kits and materials','School uniforms and sanitary packs','Textbooks and readers','Stationery and exercise books']},
+  '5400':['Equipment and devices','Laptops and tablets','Solar lighting units','Field equipment'],
+  '5500':['Partner sub-grant instalment','Partner sub-grant, community organisation','Partner capacity grant']};
+/* how many separate postings one month's spend on an account is split into, as [fewest, most] */
+var SPLIT={'5100':[1,1],'5110':[1,1],'5200':[4,9],'5300':[3,7],'5400':[1,3],'5500':[1,2]};
+var ACC={PER:[['5100',.88],['5110',.12]],TRV:[['5200',1]],SUP:[['5300',.7],['5400',.3]],PTN:[['5500',1]]};
+var DIM=[31,28,31,30,31,30,31,31,30,31,30,31];
+var raw=[];
+function pick(a){return a[Math.floor(rnd()*a.length)]}
+function describe(acct,g){var d=DESCR[acct];return pick(Array.isArray(d)?d:d[g])}
+/* split a total into n positive amounts that add up exactly, in whole tens of shillings */
+function parts(total,n){
+  var w=[],s=0,i,out=[],used=0;
+  for(i=0;i<n;i++){var x=0.4+rnd();w.push(x);s+=x}
+  for(i=0;i<n-1;i++){var v=Math.round(total*w[i]/s/10)*10;out.push(v);used+=v}
+  out.push(total-used);return out;
+}
+(function(){
+  var m;
+  for(m=1;m<=10;m++){
+    var scale=m===10?0.45:1;
+    Object.keys(B).forEach(function(key){
+      var g=key.split('|')[0],h=key.split('|')[1],direct=0;
+      ['PER','TRV','SUP','PTN'].forEach(function(l){
+        var usd=B[key].approved[l][m-1]*fac(key+'|'+l)*(0.88+0.24*rnd())*scale;
+        ACC[l].forEach(function(a){
+          var kes=Math.round(usd*a[1]*FX/10)*10,sp=SPLIT[a[0]],n=sp[0]+Math.floor(rnd()*(sp[1]-sp[0]+1));
+          direct+=kes;
+          parts(kes,n).forEach(function(part){
+            var day=(l==='PER'&&m<10)?28:(m===10?2+Math.floor(rnd()*16):3+Math.floor(rnd()*22));
+            raw.push({m:m,day:day,acct:a[0],cc:h,grant:g,kes:part,desc:describe(a[0],g),line:l});
+          });
+        });
+      });
+      var ind=Math.round(direct*0.1/10)*10;
+      raw.push({m:m,day:m===10?18:29,acct:'5900',cc:h,grant:g,kes:ind,desc:'Indirect cost allocation, 10%',line:'IND'});
+    });
+  }
+  /* entries that cannot be mapped yet: an account with no budget line, a missing grant code, and a retired grant code */
+  [[2,10,'5350','GRS','WSH',640000,'Staff training workshop'],[3,12,'5350','GRS','WSH',720000,'Staff training workshop'],
+   [4,22,'5350','GRS','WSH',560000,'Community trainer fees'],[5,14,'5350','GRS','WSH',880000,'Staff training workshop'],
+   [6,25,'5350','GRS','WSH',610000,'Community trainer fees'],[7,9,'5350','GRS','WSH',600000,'Community trainer fees'],
+   [8,21,'5350','GRS','WSH',1040000,'Staff training workshop'],[9,17,'5350','GRS','WSH',770000,'Staff training workshop'],
+   [3,6,'5200','KSM','',310000,'Field travel and fuel'],[5,19,'5200','KSM','',260000,'Field travel and fuel'],
+   [6,17,'5200','KSM','',380000,'Field travel and fuel'],[7,24,'5200','KSM','',420000,'Vehicle hire, Kisumu'],
+   [8,11,'5200','KSM','',256000,'Field travel and fuel'],[9,23,'5200','KSM','',472000,'Vehicle hire, Kisumu'],
+   [3,5,'5300','NBO','NUT-OLD',980000,'Therapeutic food and supplements'],[4,8,'5300','NBO','NUT-OLD',1240000,'Therapeutic food and supplements'],
+   [6,26,'5300','NBO','NUT-OLD',860000,'Micronutrient supplements'],[9,15,'5300','NBO','NUT-OLD',1100000,'Therapeutic food and supplements']
+  ].forEach(function(x){raw.push({m:x[0],day:x[1],acct:x[2],cc:x[3],grant:x[4],kes:x[5],desc:x[6],line:null})});
+  raw.sort(function(a,b){return a.m-b.m||a.day-b.day});
+  raw.forEach(function(e,i){
+    e.day=Math.min(e.day,DIM[e.m-1]);                      /* never a date that does not exist */
+    e.id=100401+i; e.date='2026-'+pad(e.m)+'-'+pad(e.day);
+    e.doc=e.acct==='5100'||e.acct==='5110'?'PAY-2026-'+pad(e.m):e.acct==='5900'?'ALLOC-2026-'+pad(e.m):'PI-26'+pad(e.m)+String(1000+i).slice(1);
+    e.src=e.acct==='5100'||e.acct==='5110'?'PAYROLL':e.acct==='5900'?'GENJNL':'PURCHASES';
+    e.vt=e.acct==='5100'||e.acct==='5110'?'PR':e.acct==='5900'?'GL':'AP';
+  });
+})();
+var entries=raw;
+var POS=[
+  {id:'PO-26-0412',vendor:'Synthetic Medical Supplies Ltd',g:'NUT',h:'GRS',l:'SUP',kes:13650000,m:8},
+  {id:'PO-26-0418',vendor:'Synthetic Logistics Ltd',g:'NUT',h:'GRS',l:'TRV',kes:1470000,m:9},
+  {id:'PO-26-0377',vendor:'Synthetic Pumps and Pipes',g:'WSH',h:'GRS',l:'SUP',kes:9100000,m:7},
+  {id:'PO-26-0391',vendor:'Synthetic Pumps and Pipes',g:'WSH',h:'KSM',l:'SUP',kes:10850000,m:8},
+  {id:'PO-26-0405',vendor:'Synthetic Partner Fund Transfer',g:'WSH',h:'KSM',l:'PTN',kes:2275000,m:9},
+  {id:'PO-26-0366',vendor:'Synthetic Stationers',g:'EDU',h:'KSM',l:'SUP',kes:2730000,m:6},
+  {id:'PO-26-0420',vendor:'Synthetic Learning Materials',g:'EDU',h:'NBO',l:'SUP',kes:3185000,m:9},
+  {id:'PO-26-0398',vendor:'Synthetic Partner Fund Transfer',g:'EDU',h:'NBO',l:'PTN',kes:4550000,m:8},
+  {id:'PO-26-0381',vendor:'Synthetic Logistics Ltd',g:'NUT',h:'NBO',l:'SUP',kes:1960000,m:7},
+  {id:'PO-26-0409',vendor:'Synthetic Vehicle Hire',g:'EDU',h:'KSM',l:'TRV',kes:1155000,m:9},
+  {id:'PO-26-0424',vendor:'Synthetic Partner Fund Transfer',g:'NUT',h:'GRS',l:'PTN',kes:2400000,m:9},
+  {id:'PO-26-0425',vendor:'Synthetic Vehicle Hire',g:'NUT',h:'NBO',l:'TRV',kes:640000,m:8},
+  {id:'PO-26-0426',vendor:'Synthetic Partner Fund Transfer',g:'NUT',h:'NBO',l:'PTN',kes:1800000,m:9},
+  {id:'PO-26-0427',vendor:'Synthetic Logistics Ltd',g:'WSH',h:'GRS',l:'TRV',kes:520000,m:8},
+  {id:'PO-26-0428',vendor:'Synthetic Partner Fund Transfer',g:'WSH',h:'GRS',l:'PTN',kes:3200000,m:9},
+  {id:'PO-26-0429',vendor:'Synthetic Vehicle Hire',g:'WSH',h:'KSM',l:'TRV',kes:760000,m:9},
+  {id:'PO-26-0430',vendor:'Synthetic Partner Fund Transfer',g:'EDU',h:'KSM',l:'PTN',kes:2100000,m:7},
+  {id:'PO-26-0431',vendor:'Synthetic Logistics Ltd',g:'EDU',h:'NBO',l:'TRV',kes:480000,m:8},
+  {id:'PO-26-0432',vendor:'Synthetic Borehole Drilling Ltd',g:'WSH',h:'GRS',l:'SUP',kes:4100000,m:9},
+  {id:'PO-26-0433',vendor:'Synthetic Learning Materials',g:'EDU',h:'NBO',l:'SUP',kes:1600000,m:8},
+  {id:'PO-26-0434',vendor:'Synthetic Medical Supplies Ltd',g:'NUT',h:'NBO',l:'SUP',kes:1250000,m:9}];
+
+/* ---------- mapping ---------- */
+var acctMap={'5100':'PER','5110':'PER','5200':'TRV','5300':'SUP','5400':'SUP','5500':'PTN','5900':'IND'};
+var ccMap={NBO:'NBO',GRS:'GRS',KSM:'KSM'};
+var grantMap={NUT:'NUT',WSH:'WSH',EDU:'EDU'};
+var added={acct:{},grant:{}};
+var over={};
+var A={},Cm={},unm=[];
+function mapEntry(e){
+  if(over[e.id])return over[e.id];
+  var hub=ccMap[e.cc];
+  if(!hub)return{ok:false,reason:'Cost centre not recognised',need:'hub'};
+  if(!e.grant)return{ok:false,reason:'No grant code on the entry',need:'grant',blank:true};
+  var grant=grantMap[e.grant];
+  if(!grant)return{ok:false,reason:'Grant code '+e.grant+' not recognised',need:'grant'};
+  var line=acctMap[e.acct];
+  if(!line)return{ok:false,reason:'Account '+e.acct+' has no budget line',need:'line'};
+  return{ok:true,grant:grant,hub:hub,line:line};
+}
+function recompute(){
+  A={};Cm={};unm=[];
+  entries.forEach(function(e){
+    var r=mapEntry(e);e.map=r;
+    if(r.ok){var k=r.grant+'|'+r.hub+'|'+r.line;if(!A[k])A[k]=[0,0,0,0,0,0,0,0,0,0,0,0];A[k][e.m-1]+=e.kes/FX}
+    else unm.push(e);
+  });
+  POS.forEach(function(p){var k=p.g+'|'+p.h+'|'+p.l;if(!Cm[k])Cm[k]=[0,0,0,0,0,0,0,0,0,0,0,0];Cm[k][p.m-1]+=p.kes/FX});
+}
+
+/* ---------- state ---------- */
+var S={view:'bva',role:'cfl',scope:'',grant:'',mode:'grant',period:CLOSED,cur:'USD',theme:'light',offline:false,
+  open:{},openFor:'',drawer:null,ledgerSrc:'bc',bg:'NUT',bh:'GRS',compare:false,paste:false,pasteText:'',pasteMsg:'',
+  queue:{},log:[],csv:null,rowF:{}};
+function role(){return ROLES.filter(function(r){return r.id===S.role})[0]}
+function hubOK(h){return role().hubs.indexOf(h)>-1&&(!S.scope||S.scope===h)}
+function roleHubOK(h){return role().hubs.indexOf(h)>-1}
+
+/* ---------- formatting ---------- */
+function k(){return S.cur==='KES'?FX:1}
+function fmt(usd){var v=Math.round(usd*k());var s=Math.abs(v).toLocaleString('en-US');return v<0?'−'+s:s}
+function fmtC(usd){var v=usd*k(),a=Math.abs(v),s=a>=1e6?(a/1e6).toFixed(a>=1e7?0:1)+'M':a>=1e3?Math.round(a/1e3)+'k':Math.round(a)+'';return(v<0?'−':'')+s}
+function kes(n){return Math.round(n).toLocaleString('en-US')}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function $(id){return document.getElementById(id)}
+function dateLabel(d){var p=d.split('-');return Number(p[2])+' '+MONTHS[Number(p[1])-1]}
+
+/* ---------- aggregation ---------- */
+function agg(f){
+  var b=0,btd=0,a=0,c=0,P=S.period;
+  Object.keys(B).forEach(function(key){
+    var p=key.split('|'),g=p[0],h=p[1];
+    if(f.g&&f.g!==g)return;if(f.h&&f.h!==h)return;if(!hubOK(h))return;
+    LINES.forEach(function(l){
+      if(f.l&&f.l!==l.id)return;
+      var m=B[key].approved[l.id],kk=key+'|'+l.id;
+      b+=sum(m);btd+=sum(m,P);a+=sum(A[kk],P);c+=sum(Cm[kk],P);
+    });
+  });
+  return{b:b,btd:btd,a:a,c:c,av:b-a-c};
+}
+function status(x){
+  if(x.b<=0)return['none','No budget'];
+  if(x.a>x.b)return['crit','Over budget'];
+  if(x.av<0)return['crit','Over with commitments'];
+  var r=x.btd>0?x.a/x.btd:0;
+  if(r>1.1)return['warn','Ahead of pace'];
+  if(r<0.7)return['warn','Behind pace'];
+  return['good','On pace'];
+}
+
+/* ---------- chrome ---------- */
+var VIEWS=[['bva','Budget vs actual'],['budgets','Budgets'],['ledger','Ledger intake'],['maps','Mappings']];
+function chrome(){
+  $('role').innerHTML=ROLES.map(function(r){return'<option value="'+r.id+'"'+(r.id===S.role?' selected':'')+'>'+esc(r.name)+'</option>'}).join('');
+  ['USD','KES'].forEach(function(c){$('cur-'+c).setAttribute('aria-pressed',S.cur===c)});
+  $('th-light').setAttribute('aria-pressed',S.theme==='light');$('th-dark').setAttribute('aria-pressed',S.theme==='dark');
+  $('net-on').setAttribute('aria-pressed',!S.offline);$('net-off').setAttribute('aria-pressed',S.offline);
+  var rail=VIEWS.map(function(v){
+    var b=v[0]==='maps'&&unm.length?'<span class="badge" aria-label="'+unm.length+' entries need a mapping">'+unm.length+'</span>':'';
+    return'<button type="button" data-act="nav" data-arg="'+v[0]+'"'+(S.view===v[0]?' aria-current="page"':'')+'>'+v[1]+b+'</button>';
+  }).join('');
+  rail+='<h6>Later phases</h6><div class="later">Forecast and alerts</div><div class="later">Funding gap</div><div class="later">Timesheets and staffing</div><div class="later">Donor reports</div>';
+  $('rail').innerHTML=rail;
+  var bn='';
+  var q=Object.keys(S.queue).length;
+  if(S.offline)bn='<div class="banner warn" role="status"><b>You are offline.</b> Budget edits are kept on this device'+(q?' ('+q+' waiting to sync)':'')+'. Ledger refresh, submit and approve resume when you reconnect.<button class="btn" type="button" data-act="net" data-arg="on">Reconnect</button></div>';
+  $('banners').innerHTML=bn;
+}
+function toast(msg){
+  var h=$('toastHost');h.innerHTML='<div class="toast">'+esc(msg)+'</div>';
+  clearTimeout(toast.t);toast.t=setTimeout(function(){h.innerHTML=''},3200);
+}
+
+/* ---------- screen: budget vs actual ---------- */
+function scopeFilter(){return{g:S.grant||undefined,h:S.scope||undefined}}
+function renderBVA(){
+  var f=scopeFilter(),tot=agg(f),P=S.period;
+  var scopeOpts='<option value="">Country office, all hubs</option>'+HUBS.filter(function(h){return roleHubOK(h.id)}).map(function(h){return'<option value="'+h.id+'"'+(S.scope===h.id?' selected':'')+'>'+h.name+' hub</option>'}).join('');
+  var grantOpts='<option value="">All grants</option>'+GRANTS.map(function(g){return'<option value="'+g.id+'"'+(S.grant===g.id?' selected':'')+'>'+g.name+'</option>'}).join('');
+  var perOpts=MONTHS.slice(0,10).map(function(m,i){return'<option value="'+(i+1)+'"'+(S.period===i+1?' selected':'')+'>'+(i+1<=CLOSED?'To end of '+m+' (closed)':'To '+m+' (open, partial)')+'</option>'}).join('');
+  var uk=unm.filter(function(e){return e.m<=P&&roleHubOK(ccMap[e.cc])&&(!S.scope||ccMap[e.cc]===S.scope)});
+  var ukSum=uk.reduce(function(s,e){return s+e.kes},0);
+  var h='<h1>Budget vs actual</h1><p class="lede">Approved budgets against mapped ledger spend and open commitments, for the year to the period you choose. Click any figure row to see the ledger entries behind it.</p>';
+  if(uk.length)h+='<div class="banner info" role="status"><span><b>'+uk.length+' ledger entries (KES '+kes(ukSum)+') are not mapped yet</b> and are left out of these totals.</span><button class="btn" type="button" data-act="nav" data-arg="maps">Fix mappings</button></div>';
+  h+='<div class="row"><div class="field"><label for="f-scope">Level</label><select id="f-scope" data-change="scope"'+(role().hubs.length===1?' disabled':'')+'>'+scopeOpts+'</select></div>'+
+     '<div class="field"><label for="f-grant">Grant</label><select id="f-grant" data-change="grant">'+grantOpts+'</select></div>'+
+     '<div class="field"><label for="f-period">Period</label><select id="f-period" data-change="period">'+perOpts+'</select></div>'+
+     '<div class="field"><label id="grpl">Group by</label><div class="seg" role="group" aria-labelledby="grpl">'+
+       [['grant','Grant'],['hub','Hub'],['line','Budget line']].map(function(m){return'<button type="button" data-act="mode" data-arg="'+m[0]+'" aria-pressed="'+(S.mode===m[0])+'">'+m[1]+'</button>'}).join('')+'</div></div></div>';
+  h+='<div class="stats">'+
+    stat('Annual budget',fmt(tot.b),'approved versions, FY2026')+
+    stat('Actual to date',fmt(tot.a),tot.b?Math.round(tot.a/tot.b*100)+'% of annual budget':'')+
+    stat('Committed',fmt(tot.c),'open purchase orders')+
+    '<div class="stat'+(tot.av<0?' neg':'')+'"><small>Available</small><strong>'+fmt(tot.av)+'</strong><span>budget less actual less committed</span></div></div>';
+  h+='<div class="panel"><h2>Cumulative spend against budget</h2>'+chart(f)+
+     '<div class="legend"><span><i class="sw a"></i>Actual, cumulative</span><span><svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 3"/></svg>Budget, cumulative</span></div></div>';
+  h+=table(f);
+  h+='<div class="legend"><span><i class="sw a"></i>Actual</span><span><i class="sw c"></i>Committed</span><span><i class="sw p"></i>Budget for the period so far</span><span>Amounts in '+S.cur+(S.cur==='KES'?' at a fixed KES '+FX+' per USD':', converted from KES at a fixed KES '+FX+' per USD')+'</span></div>';
+  return h;
+}
+function stat(l,v,s){return'<div class="stat"><small>'+l+'</small><strong>'+v+'</strong><span>'+s+'</span></div>'}
+
+var DIMS={grant:{list:GRANTS,key:'g'},hub:{list:HUBS,key:'h'},line:{list:LINES,key:'l'}};
+var ORDER={grant:['grant','line'],hub:['hub','grant'],line:['line','grant']};
+function table(base){
+  var ord=ORDER[S.mode],d1=DIMS[ord[0]],d2=DIMS[ord[1]],rows='',P=S.period;
+  S.rowF={};
+  if(S.openFor!==S.mode){S.open={};S.openFor=S.mode;var fi=d1.list.filter(function(x){var ff=merge(base,d1.key,x.id);return agg(ff).b>0})[0];if(fi)S.open[ord[0]+':'+fi.id]=true}
+  d1.list.forEach(function(x){
+    var f1=merge(base,d1.key,x.id),a1=agg(f1);if(a1.b===0)return;
+    var key1=ord[0]+':'+x.id,open=!!S.open[key1];S.rowF[key1]={f:f1,title:label(ord[0],x.id)};
+    var meta=ord[0]==='grant'?'<small>'+esc(GRANTS.filter(function(g){return g.id===x.id})[0].donor)+' · '+GRANTS.filter(function(g){return g.id===x.id})[0].span+' · FY2026 slice</small>':'';
+    rows+='<tr class="l1">'+'<td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+key1+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(x.name)+'">'+(open?'▾':'▸')+'</button><div><button type="button" class="link" data-act="drill" data-arg="'+key1+'" style="text-decoration:none;color:inherit">'+esc(x.name)+'</button>'+meta+'</div></div></td>'+cells(a1)+'</tr>';
+    if(open)d2.list.forEach(function(y){
+      var f2=merge(f1,d2.key,y.id),a2=agg(f2);if(a2.b===0)return;
+      var key2=key1+'|'+ord[1]+':'+y.id;S.rowF[key2]={f:f2,title:label(ord[0],x.id)+' · '+label(ord[1],y.id)};
+      rows+='<tr class="l2"><td><button type="button" class="link" data-act="drill" data-arg="'+key2+'">'+esc(y.name)+'</button></td>'+cells(a2)+'</tr>';
+    });
+  });
+  var t=agg(base);
+  rows+='<tr class="tot"><td>Total</td>'+cells(t)+'</tr>';
+  return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>'+({grant:'Grant',hub:'Hub',line:'Budget line'})[S.mode]+'</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
+function merge(f,key,val){var o={g:f.g,h:f.h,l:f.l};o[key]=val;return o}
+function label(dim,id){return dim==='grant'?grantName[id]:dim==='hub'?hubName[id]+' hub':lineName[id]}
+function cells(a){
+  var st=status(a),pa=a.b?Math.min(100,a.a/a.b*100):0,pc=a.b?Math.min(100-pa,a.c/a.b*100):0,pp=a.b?Math.min(100,a.btd/a.b*100):0;
+  var pct=a.b?Math.round(a.a/a.b*100):0;
+  return'<td class="num">'+fmt(a.b)+'</td><td class="num">'+fmt(a.a)+'</td><td class="num">'+fmt(a.c)+'</td><td class="num'+(a.av<0?' neg':'')+'">'+fmt(a.av)+'</td>'+
+   '<td><div class="usedcell"><div class="bar'+(a.av<0?' over':'')+'" style="flex:1" title="'+pct+'% spent, '+Math.round(a.b?a.c/a.b*100:0)+'% committed, '+Math.round(pp)+'% of the budget falls due by this period"><i class="a" style="width:'+pa+'%"></i><i class="c" style="left:'+pa+'%;width:'+pc+'%"></i><i class="p" style="left:calc('+pp+'% - 1px)"></i></div><span>'+pct+'%</span></div></td>'+
+   '<td><span class="pill '+st[0]+'">'+st[1]+'</span></td>';
+}
+
+/* chart */
+function niceStep(x){var p=Math.pow(10,Math.floor(Math.log10(x))),n=x/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p}
+function chart(f){
+  var mb=[],ma=[],i,P=S.period;
+  for(i=0;i<12;i++){mb.push(0);ma.push(0)}
+  Object.keys(B).forEach(function(key){
+    var p=key.split('|');if(f.g&&f.g!==p[0])return;if(f.h&&f.h!==p[1])return;if(!hubOK(p[1]))return;
+    LINES.forEach(function(l){for(i=0;i<12;i++){mb[i]+=B[key].approved[l.id][i];ma[i]+=(A[key+'|'+l.id]?A[key+'|'+l.id][i]:0)}});
+  });
+  var cb=[],ca=[],sb=0,sa=0;
+  for(i=0;i<12;i++){sb+=mb[i];cb.push(sb*k());if(i<P){sa+=ma[i];ca.push(sa*k())}}
+  var mx=Math.max(cb[11],ca[ca.length-1]||0)*1.04||1,step=niceStep(mx/4),ymax=Math.ceil(mx/step)*step;
+  var W=720,H=250,L=56,R=28,T=16,Bm=32;
+  function x(j){return L+(W-L-R)*j/11}
+  function y(v){return T+(H-T-Bm)*(1-v/ymax)}
+  var g='',v;
+  for(v=0;v<=ymax+1e-6;v+=step){g+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(L-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+fmtC(v/k())+'</text>'}
+  for(i=0;i<12;i++)g+='<text x="'+x(i)+'" y="'+(H-10)+'" text-anchor="middle">'+MONTHS[i]+'</text>';
+  var pb=cb.map(function(c,j){return(j?'L':'M')+x(j).toFixed(1)+' '+y(c).toFixed(1)}).join(' ');
+  var pa=ca.map(function(c,j){return(j?'L':'M')+x(j).toFixed(1)+' '+y(c).toFixed(1)}).join(' ');
+  var last=ca.length-1;
+  g+='<path class="bud" d="'+pb+'"/><path class="act" d="'+pa+'"/>';
+  for(i=0;i<ca.length;i++)if(i===last)g+='<circle class="dot" cx="'+x(i)+'" cy="'+y(ca[i])+'" r="5"><title>'+MONTHS[i]+': '+fmt(ca[i]/k())+' '+S.cur+' spent to date</title></circle>';
+  g+='<text class="lbl" x="'+(x(last)-8)+'" y="'+(y(ca[last])-12)+'" text-anchor="end">'+fmtC(ca[last]/k())+' spent</text>';
+  g+='<text x="'+(x(11))+'" y="'+(y(cb[11])-8)+'" text-anchor="end">'+fmtC(cb[11]/k())+' budget</text>';
+  return'<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Cumulative actual spend of '+fmtC(ca[last]/k())+' '+S.cur+' to '+MONTHS[last]+' against a full-year budget of '+fmtC(cb[11]/k())+'">'+g+'</svg>';
+}
+
+/* drawer */
+function openDrawer(key){
+  var r=S.rowF[key];if(!r)return;S.drawer=r;renderDrawer();
+}
+function renderDrawer(){
+  var d=S.drawer,host=$('drawerHost');
+  if(!d){host.innerHTML='';return}
+  var f=d.f,P=S.period,list=[],pos=[];
+  entries.forEach(function(e){
+    var m=e.map;if(!m.ok||e.m>P)return;
+    if(f.g&&f.g!==m.grant)return;if(f.h&&f.h!==m.hub)return;if(f.l&&f.l!==m.line)return;if(!hubOK(m.hub))return;
+    list.push(e);
+  });
+  POS.forEach(function(p){if(p.m>P)return;if(f.g&&f.g!==p.g)return;if(f.h&&f.h!==p.h)return;if(f.l&&f.l!==p.l)return;if(!hubOK(p.h))return;pos.push(p)});
+  var a=agg(f),salaryHidden=!role().salary&&(!f.l||f.l==='PER');
+  var LIMIT=250,shown=list.length>LIMIT?list.slice(list.length-LIMIT):list;
+  var rows=shown.filter(function(e){return !(salaryHidden&&e.map.line==='PER')}).map(function(e){
+    return'<tr><td>'+dateLabel(e.date)+'</td><td class="mono">'+e.doc+'</td><td>'+esc(e.desc)+'<div class="note">'+esc(hubName[e.map.hub])+' · '+esc(lineName[e.map.line])+'</div></td><td class="mono">'+e.acct+'</td><td class="num">'+kes(e.kes)+'</td></tr>';
+  }).join('');
+  var hid=list.length-list.filter(function(e){return !(salaryHidden&&e.map.line==='PER')}).length;
+  var prow=pos.map(function(p){return'<tr><td>'+MONTHS[p.m-1]+'</td><td class="mono">'+p.id+'</td><td>'+esc(p.vendor)+'<div class="note">'+esc(hubName[p.h])+' · '+esc(lineName[p.l])+'</div></td><td><span class="pill none">Open</span></td><td class="num">'+kes(p.kes)+'</td></tr>'}).join('');
+  var h='<div class="scrim" data-act="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dwt"><header><div style="flex:1;min-width:0"><div class="note">Ledger entries behind this figure</div><h2 id="dwt">'+esc(d.title)+'</h2></div><button class="x" type="button" data-act="close" aria-label="Close">✕</button></header><div class="body">'+
+   '<div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+stat('Budget',fmt(a.b),S.cur)+stat('Actual',fmt(a.a),S.cur)+stat('Committed',fmt(a.c),S.cur)+'</div>';
+  if(hid)h+='<div class="banner info">Salary detail is hidden for your role. '+hid+' payroll entries are counted in the totals but not listed.</div>';
+  h+='<h2>Posted entries (KES)</h2>'+(rows?'<div class="scroll"><table class="st"><thead><tr><th>Date</th><th>Document</th><th>Description</th><th>Account</th><th class="num">KES</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">No posted entries for this selection up to the chosen period.</p>')+(list.length>LIMIT?'<p class="note">Showing the latest '+LIMIT+' of '+list.length.toLocaleString('en-US')+' entries. The totals above include all of them.</p>':'');
+  h+='<h2 style="margin-top:18px">Open commitments (KES)</h2>'+(prow?'<div class="scroll"><table class="st"><thead><tr><th>Raised</th><th>Order</th><th>Supplier</th><th>Status</th><th class="num">KES</th></tr></thead><tbody>'+prow+'</tbody></table></div>':'<p class="muted">No open purchase orders for this selection.</p>');
+  h+='</div></aside>';
+  host.innerHTML=h;
+  var c=host.querySelector('.x');if(c)c.focus();
+}
+
+/* ---------- screen: budgets ---------- */
+function bkey(){return S.bg+'|'+S.bh}
+function ensureBudgetSel(){
+  var ok=Object.keys(B).filter(function(key){return roleHubOK(key.split('|')[1])});
+  if(ok.indexOf(bkey())<0){var p=ok[0].split('|');S.bg=p[0];S.bh=p[1]}
+  var hs=ok.filter(function(key){return key.split('|')[0]===S.bg});
+  if(hs.map(function(x){return x.split('|')[1]}).indexOf(S.bh)<0)S.bh=hs[0].split('|')[1];
+}
+function canEdit(){var b=B[bkey()];return role().edit&&!(b.status==='submitted'&&!role().approve)}
+function renderBudgets(){
+  ensureBudgetSel();
+  var key=bkey(),b=B[key],r=role(),edit=canEdit();
+  var okKeys=Object.keys(B).filter(function(x){return roleHubOK(x.split('|')[1])});
+  var gs=GRANTS.filter(function(g){return okKeys.some(function(x){return x.split('|')[0]===g.id})});
+  var hs=HUBS.filter(function(h){return okKeys.indexOf(S.bg+'|'+h.id)>-1});
+  var st=b.status;
+  var stPill=st==='approved'?'<span class="pill ok">Approved v'+b.version+'</span>':st==='draft'?'<span class="pill warn">Draft changes on v'+b.version+'</span>':'<span class="pill none">Submitted, waiting for review</span>';
+  var h='<h1>Budgets</h1><p class="lede">Each hub keeps its own budget by line and month. Edit a figure directly, or paste rows from Excel. Changes stay in a draft until the country finance lead approves them, and only approved budgets feed budget vs actual.</p>';
+  h+='<div class="row"><div class="field"><label for="b-grant">Grant</label><select id="b-grant" data-change="bgrant">'+gs.map(function(g){return'<option value="'+g.id+'"'+(S.bg===g.id?' selected':'')+'>'+g.name+'</option>'}).join('')+'</select></div>'+
+    '<div class="field"><label for="b-hub">Hub</label><select id="b-hub" data-change="bhub">'+hs.map(function(x){return'<option value="'+x.id+'"'+(S.bh===x.id?' selected':'')+'>'+x.name+'</option>'}).join('')+'</select></div>'+
+    '<div class="field"><label>Status</label><div style="min-height:34px;display:flex;align-items:center">'+stPill+'</div></div>'+
+    '<label style="display:flex;gap:6px;align-items:center;min-height:34px"><input type="checkbox" id="b-cmp" data-change="compare"'+(S.compare?' checked':'')+'> Highlight changes from approved v'+b.version+'</label></div>';
+  if(!r.edit)h+='<div class="banner info">Your role can view budgets but not change them.</div>';
+  else if(b.status==='submitted'&&!r.approve)h+='<div class="banner info">This budget is with the country finance lead for review, so editing is locked.</div>';
+  h+='<div class="panel"><h2>'+esc(grantName[S.bg])+', '+esc(hubName[S.bh])+' hub, FY2026 (USD)</h2><div class="scroll"><table class="grid"><thead><tr><th>Budget line</th>'+MONTHS.map(function(m){return'<th>'+m+'</th>'}).join('')+'<th>Total</th></tr></thead><tbody>';
+  ['PER','TRV','SUP','PTN'].forEach(function(l){
+    h+='<tr><th scope="row">'+lineName[l]+'</th>'+b.draft[l].map(function(v,i){return'<td><input class="cell" type="text" inputmode="numeric" id="c-'+l+'-'+i+'" data-input="cell" data-l="'+l+'" data-i="'+i+'" value="'+v+'" aria-label="'+lineName[l]+', '+MONTHS[i]+'"'+(edit?'':' disabled')+'></td>'}).join('')+'<td class="tot" id="t-'+l+'"></td></tr>';
+  });
+  h+='<tr><th scope="row">Indirect costs (10%, calculated)</th>'+MONTHS.map(function(m,i){return'<td class="calc" id="ind-'+i+'"></td>'}).join('')+'<td class="tot" id="t-IND"></td></tr>';
+  h+='<tr class="sum"><th scope="row">Total</th>'+MONTHS.map(function(m,i){return'<td class="calc" id="sum-'+i+'" style="font-weight:600;color:var(--ink)"></td>'}).join('')+'<td class="tot" id="t-ALL"></td></tr></tbody></table></div>';
+  h+='<p class="note" id="deltaNote" style="margin:10px 0 0"></p>';
+  h+='<div class="btns" style="margin-top:12px">';
+  var online=!S.offline;
+  if(edit&&st==='draft'&&!r.approve)h+='<button class="btn primary" type="button" data-act="submit"'+(online?'':' disabled')+'>Submit for review</button>';
+  if(r.approve&&(st==='draft'||st==='submitted'))h+='<button class="btn primary" type="button" data-act="approve"'+(online?'':' disabled')+'>Approve as v'+(b.version+1)+'</button>';
+  if(r.approve&&st==='submitted')h+='<button class="btn" type="button" data-act="return"'+(online?'':' disabled')+'>Return to hub</button>';
+  if(edit&&st==='draft')h+='<button class="btn" type="button" data-act="discard">Discard changes</button>';
+  if(edit)h+='<button class="btn" type="button" data-act="pastetoggle">'+(S.paste?'Hide import':'Import from Excel')+'</button>';
+  if(!online&&(st==='draft'||st==='submitted'))h+='<span class="note">Submit and approve need a connection.</span>';
+  h+='</div></div>';
+  if(edit&&S.paste){
+    h+='<div class="panel"><h2>Import from Excel</h2><p class="note" style="margin-top:0">Copy rows from a spreadsheet and paste them here. The first column names the budget line (Personnel, Travel, Supplies, Partner). Give twelve monthly figures, or one annual figure to spread evenly. Indirect costs are calculated, so leave them out.</p>'+
+      '<textarea id="pasteBox" data-input="paste" aria-label="Rows pasted from Excel" placeholder="Personnel\t8000\t8000\t8000\t8000\t8000\t8000\t8000\t8000\t8000\t8000\t8000\t8000">'+esc(S.pasteText)+'</textarea>'+
+      '<div class="btns" style="margin-top:8px"><button class="btn primary" type="button" data-act="applypaste">Apply to draft</button><button class="btn" type="button" data-act="samplepaste">Fill with a sample</button><label class="btn" for="csvBudget" style="display:inline-flex;align-items:center">Choose a CSV file</label><input id="csvBudget" type="file" accept=".csv,.txt,.tsv" data-change="budgetfile" style="position:absolute;opacity:0;width:1px;height:1px"></div>'+
+      (S.pasteMsg?'<p class="note" role="status" style="margin-bottom:0">'+esc(S.pasteMsg)+'</p>':'')+'</div>';
+  }
+  h+='<div class="cols"><div class="panel"><h2>Change log</h2>'+(S.log.length?'<ul class="log">'+S.log.slice(-6).reverse().map(function(x){return'<li><span>'+x.t+'</span><span>'+esc(x.w)+'</span></li>'}).join('')+'</ul>':'<p class="muted" style="margin:0">Nothing changed yet in this session. Every edit, submission and approval is recorded here with who and when.</p>')+'</div>'+
+    '<div class="panel"><h2>Version history</h2><ul class="log">'+(function(){var s='',v;for(v=b.version;v>=1;v--)s+='<li><span>v'+v+'</span><span>'+(v===1?'First submission from the hub':'Approved by Country lead'+(v===b.version?', current':', replaced'))+'</span></li>';return s})()+'</ul></div></div>';
+  return h;
+}
+function patchGrid(){
+  var key=bkey(),b=B[key],d=b.draft,a=b.approved,i,l,tot={},ind=indirect(d),sumAll=0,chg=0;
+  d.IND=ind;
+  ['PER','TRV','SUP','PTN'].forEach(function(ln){tot[ln]=sum(d[ln])});
+  for(i=0;i<12;i++){
+    var c=$('ind-'+i);if(c)c.textContent=ind[i].toLocaleString('en-US');
+    var s=d.PER[i]+d.TRV[i]+d.SUP[i]+d.PTN[i]+ind[i];
+    var sc=$('sum-'+i);if(sc)sc.textContent=s.toLocaleString('en-US');
+  }
+  ['PER','TRV','SUP','PTN'].forEach(function(ln){
+    var t=$('t-'+ln);if(t)t.textContent=tot[ln].toLocaleString('en-US');
+    for(i=0;i<12;i++){var inp=$('c-'+ln+'-'+i);if(inp){var diff=d[ln][i]!==a[ln][i];inp.classList.toggle('chg',S.compare&&diff)}}
+  });
+  var ti=$('t-IND');if(ti)ti.textContent=sum(ind).toLocaleString('en-US');
+  var all=sum(d.PER)+sum(d.TRV)+sum(d.SUP)+sum(d.PTN)+sum(ind);
+  sumAll=all;var ta=$('t-ALL');if(ta)ta.textContent=all.toLocaleString('en-US');
+  var approvedAll=sum(a.PER)+sum(a.TRV)+sum(a.SUP)+sum(a.PTN)+sum(a.IND);
+  var dn=$('deltaNote');
+  if(dn){var dl=all-approvedAll;dn.textContent=dl===0?'Draft matches approved v'+b.version+' ('+approvedAll.toLocaleString('en-US')+' USD).':'Draft total '+all.toLocaleString('en-US')+' USD, '+(dl>0?'up ':'down ')+Math.abs(dl).toLocaleString('en-US')+' USD from approved v'+b.version+' ('+approvedAll.toLocaleString('en-US')+').'}
+}
+function parseNum(s){var v=Number(String(s).replace(/[,\s ]/g,''));return isFinite(v)&&v>=0?Math.round(v):NaN}
+var TOK={PER:'personnel',TRV:'travel',SUP:'suppl',PTN:'partner'};
+function applyText(text){
+  var d=B[bkey()].draft,ok=0,skip=0,lines=text.split(/\r?\n/).filter(function(x){return x.trim()});
+  lines.forEach(function(ln){
+    var cells=ln.indexOf('\t')>-1?ln.split('\t'):ln.split(',');
+    var name=(cells[0]||'').toLowerCase(),id=null;
+    Object.keys(TOK).forEach(function(x){if(name.indexOf(TOK[x])>-1)id=x});
+    var vals=cells.slice(1).map(parseNum).filter(function(v){return !isNaN(v)});
+    if(!id||!vals.length){skip++;return}
+    if(vals.length===1)d[id]=spread(vals[0]);
+    else if(vals.length>=12)d[id]=vals.slice(0,12);
+    else{skip++;return}
+    ok++;
+  });
+  return{ok:ok,skip:skip};
+}
+function markEdited(who){
+  var b=B[bkey()];
+  if(b.status==='approved')b.status='draft';
+}
+function logIt(w){S.log.push({t:'Just now',w:role().short+': '+w})}
+
+/* ---------- screen: ledger ---------- */
+function renderLedger(){
+  var src=S.ledgerSrc,bc=src==='bc';
+  var byNew=entries.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id});
+  var recent=byNew.slice(0,9);
+  byNew.filter(function(e){return !e.map.ok}).slice(0,3).forEach(function(e){if(recent.indexOf(e)<0)recent.push(e)});
+  recent.sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id});
+  var mapped=entries.length-unm.length;
+  var h='<h1>Ledger intake</h1><p class="lede">Mizani reads posted entries from the accounting system and never writes back. Two connectors are planned, plus a file import for anything else. The same entries are shown below in each system’s own layout.</p>';
+  h+='<div class="stats">'+stat('Entries read',entries.length.toLocaleString('en-US'),'FY2026 to 20 Oct')+stat('Mapped',mapped.toLocaleString('en-US'),'counted in budget vs actual')+
+    '<div class="stat'+(unm.length?' neg':'')+'"><small>Need a mapping</small><strong>'+unm.length+'</strong><span>'+(unm.length?'<button class="link" type="button" data-act="nav" data-arg="maps">Review them</button>':'nothing waiting')+'</span></div>'+stat('Last refresh','07:00','Tue 20 Oct 2026, scheduled daily')+'</div>';
+  h+='<div class="panel"><div class="row" style="margin-bottom:8px"><div class="field"><label id="srcl">Accounting system</label><div class="seg" role="group" aria-labelledby="srcl"><button type="button" data-act="src" data-arg="bc" aria-pressed="'+bc+'">Business Central / Navision</button><button type="button" data-act="src" data-arg="ag" aria-pressed="'+!bc+'">Agresso</button></div></div>'+
+    '<button class="btn" type="button" data-act="refresh"'+(S.offline?' disabled':'')+'>Refresh from ledger</button></div>'+
+    '<p class="note" style="margin-top:0">'+(bc?'Columns follow the standard G/L Entry table. Only two dimensions sit on the entry itself; others come from the dimension set.':'Typical Agresso column names; they vary by installation and still need checking against a real export.')+'</p>';
+  h+='<div class="scroll"><table class="st"><thead><tr>'+(bc?
+    '<th>Entry No.</th><th>Posting Date</th><th>Document No.</th><th>G/L Account No.</th><th>Description</th><th>Global Dim. 1</th><th>Global Dim. 2</th><th class="num">Amount (KES)</th><th>Source Code</th>':
+    '<th>voucher_no</th><th>voucher_type</th><th>period</th><th>trans_date</th><th>account</th><th>description</th><th>dim_1</th><th>dim_2</th><th class="num">amount</th><th>currency</th>')+
+    '<th class="inm">In Mizani</th></tr></thead><tbody>'+
+    recent.map(function(e){
+      var m=e.map,res=m.ok?'<span class="pill ok">'+esc(grantName[m.grant])+' · '+esc(hubName[m.hub])+' · '+esc(lineName[m.line])+'</span>':'<span class="pill fix">Needs a mapping</span>';
+      return'<tr>'+(bc?
+        '<td class="mono">'+e.id+'</td><td class="mono">'+e.date+'</td><td class="mono">'+e.doc+'</td><td class="mono">'+e.acct+'</td><td>'+esc(e.desc)+'</td><td class="mono">'+e.cc+'</td><td class="mono">'+esc(e.grant)+'</td><td class="num">'+kes(e.kes)+'</td><td class="mono">'+e.src+'</td>':
+        '<td class="mono">V'+(4000000+e.id)+'</td><td class="mono">'+e.vt+'</td><td class="mono">2026'+pad(e.m)+'</td><td class="mono">'+e.date+'</td><td class="mono">'+e.acct+'</td><td>'+esc(e.desc)+'</td><td class="mono">'+e.cc+'</td><td class="mono">'+esc(e.grant)+'</td><td class="num">'+kes(e.kes)+'</td><td class="mono">KES</td>')+
+        '<td class="inm">'+res+'</td></tr>';
+    }).join('')+'</tbody></table></div><p class="note" style="margin-bottom:0">Latest entries, plus any waiting for a mapping, of '+entries.length+' in all. Accounts, cost centres and grant codes are invented.</p></div>';
+  h+='<div class="panel"><h2>Anything else: import a file</h2><p class="note" style="margin-top:0">For Sage, Sun, QuickBooks or a one-off extract, export the ledger as CSV with these columns: <span class="mono">entry_id, date, document_no, account, description, cost_centre, grant_code, amount, currency</span>. This prototype reads the header and counts rows; it does not add them to the demo data.</p>'+
+    '<div class="btns"><label class="btn" for="csvLedger" style="display:inline-flex;align-items:center">Choose a CSV file</label><input id="csvLedger" type="file" accept=".csv,.txt" data-change="ledgerfile" style="position:absolute;opacity:0;width:1px;height:1px"></div>';
+  if(S.csv){
+    var need=['entry_id','date','document_no','account','description','cost_centre','grant_code','amount','currency'];
+    h+='<div style="margin-top:12px" role="status"><b>'+esc(S.csv.name)+'</b>: '+S.csv.rows+' data rows. '+need.map(function(n){return S.csv.cols.indexOf(n)>-1?'<span class="pill ok">'+n+'</span>':'<span class="pill fix">'+n+' missing</span>'}).join(' ')+'</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ---------- screen: mappings ---------- */
+function renderMaps(){
+  var h='<h1>Mappings</h1><p class="lede">A mapping turns a ledger entry into a grant, a budget line and a hub. Entries that cannot be matched wait here and are left out of budget vs actual until someone resolves them. Remembering a mapping applies it to every matching entry now and in future refreshes.</p>';
+  h+='<div class="panel"><h2>Needs attention ('+unm.length+')</h2>';
+  if(!unm.length)h+='<p class="muted" style="margin:0">Every entry is mapped. Nothing needs attention.</p>';
+  else{
+    h+='<div class="scroll"><table class="st"><thead><tr><th>Entry</th><th>Description</th><th>Account</th><th>Cost centre</th><th>Grant code</th><th class="num">KES</th><th>Why</th><th>Resolve</th></tr></thead><tbody>';
+    unm.forEach(function(e){
+      var m=e.map,sel='';
+      if(m.need==='grant')sel='<select id="fx-g-'+e.id+'" aria-label="Grant for entry '+e.id+'"><option value="">Choose a grant</option>'+GRANTS.map(function(g){return'<option value="'+g.id+'">'+g.name+'</option>'}).join('')+'</select>';
+      else if(m.need==='line')sel='<select id="fx-l-'+e.id+'" aria-label="Budget line for entry '+e.id+'"><option value="">Choose a budget line</option>'+LINES.filter(function(l){return l.id!=='IND'}).map(function(l){return'<option value="'+l.id+'">'+l.name+'</option>'}).join('')+'</select>';
+      var rem=m.blank?'<div class="note">No code to remember, applies to this entry only.</div>':'<label><input type="checkbox" id="fx-r-'+e.id+'" checked> Remember for every '+(m.need==='line'?'entry on account '+e.acct:'entry with code '+esc(e.grant))+'</label>';
+      h+='<tr><td class="mono">'+e.id+'<div class="note">'+dateLabel(e.date)+'</div></td><td>'+esc(e.desc)+'</td><td class="mono">'+e.acct+'<div class="note">'+esc(ACCT_NAME[e.acct]||'')+'</div></td><td class="mono">'+e.cc+'</td><td class="mono">'+(e.grant?esc(e.grant):'<span class="muted">blank</span>')+'</td><td class="num">'+kes(e.kes)+'</td><td>'+esc(m.reason)+'</td>'+
+        '<td class="fixrow">'+sel+rem+'<button class="btn" type="button" data-act="fix" data-arg="'+e.id+'" style="margin-top:4px">Apply</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='</div>';
+  h+='<div class="cols"><div class="panel"><h2>Account to budget line</h2><div class="scroll"><table class="st" style="min-width:0"><thead><tr><th>Account</th><th>Budget line</th></tr></thead><tbody>'+
+    Object.keys(acctMap).map(function(a){return'<tr><td><span class="mono">'+a+'</span> '+esc(ACCT_NAME[a]||'')+'</td><td>'+esc(lineName[acctMap[a]])+(added.acct[a]?' <span class="tag">added now</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+    '<div class="panel"><h2>Cost centre to hub</h2><div class="scroll"><table class="st" style="min-width:0"><thead><tr><th>Cost centre</th><th>Hub</th></tr></thead><tbody>'+
+    HUBS.map(function(x){return'<tr><td class="mono">'+x.id+'</td><td>'+x.name+'</td></tr>'}).join('')+'</tbody></table></div>'+
+    '<h2 style="margin-top:16px">Grant code to grant</h2><div class="scroll"><table class="st" style="min-width:0"><thead><tr><th>Code</th><th>Grant</th></tr></thead><tbody>'+
+    Object.keys(grantMap).map(function(c){return'<tr><td class="mono">'+c+'</td><td>'+esc(grantName[grantMap[c]])+(added.grant[c]?' <span class="tag">added now</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+  h+='<p class="note">Every mapping change is logged with who made it and when, so a figure can always be explained later.</p>';
+  return h;
+}
+
+/* ---------- rendering and events ---------- */
+function render(){
+  recompute();chrome();
+  var h=S.view==='budgets'?renderBudgets():S.view==='ledger'?renderLedger():S.view==='maps'?renderMaps():renderBVA();
+  $('main').innerHTML=h;
+  if(S.view==='budgets')patchGrid();
+  renderDrawer();
+}
+document.addEventListener('click',function(ev){
+  var t=ev.target.closest('[data-act]');if(!t)return;
+  var act=t.getAttribute('data-act'),arg=t.getAttribute('data-arg'),b;
+  if(act==='nav'){S.view=arg;S.drawer=null;render();try{location.hash=arg}catch(e){}window.scrollTo(0,0)}
+  else if(act==='cur'){S.cur=arg;render()}
+  else if(act==='theme'){S.theme=arg;document.documentElement.setAttribute('data-theme',arg);try{localStorage.setItem('mizani-theme',arg)}catch(e){}render()}
+  else if(act==='net'){
+    var was=S.offline;S.offline=(arg==='off');
+    if(was&&!S.offline){var q=Object.keys(S.queue).length;if(q){logIt('synced '+q+' offline edit'+(q>1?'s':''));toast('Back online. Synced '+q+' change'+(q>1?'s':'')+' with no conflicts.')}else toast('Back online.');S.queue={}}
+    else if(!was&&S.offline)toast('Offline. You can keep editing budgets on this device.');
+    render();
+  }
+  else if(act==='mode'){S.mode=arg;render()}
+  else if(act==='toggle'){S.open[arg]=!S.open[arg];render()}
+  else if(act==='drill'){openDrawer(arg)}
+  else if(act==='close'){S.drawer=null;renderDrawer()}
+  else if(act==='src'){S.ledgerSrc=arg;render()}
+  else if(act==='refresh'){toast('Up to date. No new entries since 07:00.')}
+  else if(act==='pastetoggle'){S.paste=!S.paste;S.pasteMsg='';render()}
+  else if(act==='samplepaste'){
+    var d=B[bkey()].approved;
+    S.pasteText=['PER','TRV','SUP','PTN'].map(function(l){return lineName[l].split(' ')[0]+'\t'+d[l].map(function(v,i){return i>=9?Math.round(v*1.08):v}).join('\t')}).join('\n');
+    S.pasteMsg='Sample filled in: the last three months are 8% higher than approved. Press Apply to draft.';render();
+  }
+  else if(act==='applypaste'){
+    var r=applyText(S.pasteText);
+    if(r.ok){markEdited();logIt('imported '+r.ok+' budget line'+(r.ok>1?'s':'')+' from Excel for '+grantName[S.bg]+', '+hubName[S.bh]);S.compare=true;
+      if(S.offline)S.queue[bkey()+':import']=1}
+    S.pasteMsg=r.ok?'Applied '+r.ok+' line'+(r.ok>1?'s':'')+' to the draft'+(r.skip?', skipped '+r.skip+' row'+(r.skip>1?'s':'')+' it could not read':'')+'. Changes are highlighted below.':'Nothing applied. Check that each row starts with a budget line and has one or twelve numbers.';
+    render();
+  }
+  else if(act==='submit'){B[bkey()].status='submitted';logIt('submitted '+grantName[S.bg]+', '+hubName[S.bh]+' for review');toast('Submitted. The country finance lead will see it.');render()}
+  else if(act==='approve'){b=B[bkey()];b.approved=clone(b.draft);b.approved.IND=indirect(b.approved);b.version++;b.status='approved';logIt('approved '+grantName[S.bg]+', '+hubName[S.bh]+' as v'+b.version);toast('Approved as v'+b.version+'. Budget vs actual now uses it.');render()}
+  else if(act==='return'){B[bkey()].status='draft';logIt('returned '+grantName[S.bg]+', '+hubName[S.bh]+' to the hub');toast('Returned to the hub for changes.');render()}
+  else if(act==='discard'){b=B[bkey()];b.draft=clone(b.approved);b.status='approved';logIt('discarded draft changes for '+grantName[S.bg]+', '+hubName[S.bh]);render()}
+  else if(act==='fix'){
+    var id=Number(arg),e=entries.filter(function(x){return x.id===id})[0],m=e.map,rem=$('fx-r-'+id),remember=rem?rem.checked:false,n=0;
+    if(m.need==='grant'){
+      var gv=$('fx-g-'+id).value;if(!gv){toast('Choose a grant first.');return}
+      if(remember&&!m.blank){grantMap[e.grant]=gv;added.grant[e.grant]=true}
+      else{var ln=acctMap[e.acct];over[id]={ok:true,grant:gv,hub:ccMap[e.cc],line:ln}}
+    }else if(m.need==='line'){
+      var lv=$('fx-l-'+id).value;if(!lv){toast('Choose a budget line first.');return}
+      if(remember){acctMap[e.acct]=lv;added.acct[e.acct]=true}
+      else over[id]={ok:true,grant:grantMap[e.grant],hub:ccMap[e.cc],line:lv};
+    }
+    var before=unm.length;recompute();n=before-unm.length;
+    logIt('mapped '+n+' ledger entr'+(n===1?'y':'ies'));
+    toast(n+' entr'+(n===1?'y':'ies')+' mapped and now counted in budget vs actual.');render();
+  }
+});
+document.addEventListener('change',function(ev){
+  var t=ev.target,c=t.getAttribute&&t.getAttribute('data-change');if(!c)return;
+  if(c==='role'){S.role=t.value;S.scope=role().hubs.length===1?role().hubs[0]:'';S.drawer=null;render()}
+  else if(c==='scope'){S.scope=t.value;render()}
+  else if(c==='grant'){S.grant=t.value;render()}
+  else if(c==='period'){S.period=Number(t.value);render()}
+  else if(c==='bgrant'){S.bg=t.value;render()}
+  else if(c==='bhub'){S.bh=t.value;render()}
+  else if(c==='compare'){S.compare=t.checked;patchGrid()}
+  else if(c==='budgetfile'||c==='ledgerfile'){
+    var fl=t.files&&t.files[0];if(!fl)return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      var text=String(rd.result);
+      if(c==='budgetfile'){S.pasteText=text;var r=applyText(text);if(r.ok){markEdited();logIt('imported '+r.ok+' budget line'+(r.ok>1?'s':'')+' from file '+fl.name);S.compare=true}
+        S.pasteMsg=r.ok?'Applied '+r.ok+' line'+(r.ok>1?'s':'')+' from '+fl.name+(r.skip?', skipped '+r.skip:'')+'.':'No budget lines found in '+fl.name+'.'}
+      else{var lines=text.split(/\r?\n/).filter(function(x){return x.trim()});var cols=(lines[0]||'').split(/,|\t/).map(function(x){return x.trim().toLowerCase()});S.csv={name:fl.name,rows:Math.max(0,lines.length-1),cols:cols}}
+      render();
+    };
+    rd.readAsText(fl);
+  }
+});
+document.addEventListener('input',function(ev){
+  var t=ev.target,c=t.getAttribute&&t.getAttribute('data-input');if(!c)return;
+  if(c==='paste'){S.pasteText=t.value;return}
+  if(c==='cell'){
+    var l=t.getAttribute('data-l'),i=Number(t.getAttribute('data-i')),v=parseNum(t.value);
+    if(isNaN(v)){t.setAttribute('aria-invalid','true');return}
+    t.removeAttribute('aria-invalid');
+    var b=B[bkey()];b.draft[l][i]=v;
+    if(S.offline)S.queue[bkey()+':'+l+i]=1;
+    if(b.status==='approved'){
+      /* the action buttons depend on status, so draw once and put the cursor back */
+      b.status='draft';var pos=t.selectionStart,id=t.id;render();
+      var again=$(id);if(again){again.focus();try{again.setSelectionRange(pos,pos)}catch(e){}}
+    }else patchGrid();
+  }
+});
+/* record a cell edit in the change log once the user leaves the field */
+document.addEventListener('focusout',function(ev){
+  var t=ev.target;if(!t.getAttribute||t.getAttribute('data-input')!=='cell')return;
+  var b=B[bkey()],l=t.getAttribute('data-l'),i=Number(t.getAttribute('data-i'));
+  if(b.draft[l][i]!==b.approved[l][i]&&t.dataset.logged!==String(b.draft[l][i])){
+    logIt('edited '+lineName[l]+' for '+MONTHS[i]+' ('+grantName[S.bg]+', '+hubName[S.bh]+')');t.dataset.logged=String(b.draft[l][i]);
+  }
+});
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&S.drawer){S.drawer=null;renderDrawer()}});
+
+try{var hsh=(location.hash||'').replace('#','');if(['bva','budgets','ledger','maps'].indexOf(hsh)>-1)S.view=hsh}catch(e){}
+try{var th=localStorage.getItem('mizani-theme');if(th==='dark'||th==='light')S.theme=th}catch(e){}
+document.documentElement.setAttribute('data-theme',S.theme);
+S.queue={};
+render();
+})();
+</script>
+</body>
+</html>
