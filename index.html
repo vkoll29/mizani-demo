@@ -308,18 +308,18 @@ var LNAME={
   EDU1:{PER:'Programme staff',TRV:'Transport',SUP:'Learning materials and equipment',PTN:'Partner organisations',IND:'Indirect costs (10%)'},
   EDU2:{PER:'Personnel',TRV:'Travel',SUP:'Supplies',PTN:'Sub-grants',IND:'Management fee (10%)'}};
 var THEMES=['Nutrition','Water and hygiene','Education'];
-/* An activity belongs to exactly one grant. The ledger carries an activity TYPE code that the whole organisation
-   shares, so the same code can appear under several grants. The grant code and the type code together identify the
-   activity record: two grants funding the same kind of work get two separate activities, never one merged one.
-   The theme is only a label for reporting across grants. The last number is a weight for the demo data. */
+/* An activity belongs to exactly one grant, and its code is unique across the whole organisation, so the code alone
+   identifies the activity and its grant. Two grants funding the same kind of work get two activities with two codes,
+   never one merged one. The theme is only a label for reporting across grants. The last number is a weight for the
+   demo data. */
 var ACT_DEF=[
-  ['NUT1','A101','Community nutrition screening','Nutrition',4],['NUT1','A102','Therapeutic feeding centres','Nutrition',3],['NUT1','A103','Caregiver counselling and training','Nutrition',2],
-  ['NUT2','A101','Community nutrition screening','Nutrition',3],['NUT2','A104','Supply chain and cold chain','Nutrition',3],['NUT2','A105','Mobile outreach clinics','Nutrition',2],
-  ['WSH1','A201','Borehole rehabilitation','Water and hygiene',5],['WSH1','A202','Water point management committees','Water and hygiene',2],['WSH1','A203','Hygiene promotion','Water and hygiene',2],
-  ['WSH2','A204','School and clinic sanitation','Water and hygiene',4],['WSH2','A203','Hygiene promotion','Water and hygiene',2],['WSH2','A205','Handwashing stations','Water and hygiene',2],
-  ['EDU1','A301','Girls’ scholarships and bursaries','Education',4],['EDU1','A302','Safe school clubs','Education',2],['EDU1','A303','Teacher mentoring','Education',2],
-  ['EDU2','A303','Teacher mentoring','Education',2],['EDU2','A304','School feeding','Nutrition',4],['EDU2','A305','Learning materials','Education',2]];
-var ACTS=ACT_DEF.map(function(d){return{id:d[0]+'-'+d[1],grant:d[0],type:d[1],name:d[2],theme:d[3],status:'Active',budget:0,w:d[4]}});
+  ['NUT1','2600100','Community nutrition screening','Nutrition',4],['NUT1','2600113','Therapeutic feeding centres','Nutrition',3],['NUT1','2600126','Caregiver counselling and training','Nutrition',2],
+  ['NUT2','2600139','Community nutrition screening','Nutrition',3],['NUT2','2600152','Supply chain and cold chain','Nutrition',3],['NUT2','2600165','Mobile outreach clinics','Nutrition',2],
+  ['WSH1','2600178','Borehole rehabilitation','Water and hygiene',5],['WSH1','2600191','Water point management committees','Water and hygiene',2],['WSH1','2600204','Hygiene promotion','Water and hygiene',2],
+  ['WSH2','2600217','School and clinic sanitation','Water and hygiene',4],['WSH2','2600230','Hygiene promotion','Water and hygiene',2],['WSH2','2600243','Handwashing stations','Water and hygiene',2],
+  ['EDU1','2600256','Girls’ scholarships and bursaries','Education',4],['EDU1','2600269','Safe school clubs','Education',2],['EDU1','2600282','Teacher mentoring','Education',2],
+  ['EDU2','2600295','Teacher mentoring','Education',2],['EDU2','2600308','School feeding','Nutrition',4],['EDU2','2600321','Learning materials','Education',2]];
+var ACTS=ACT_DEF.map(function(d){return{id:d[1],code:d[1],grant:d[0],name:d[2],theme:d[3],status:'Active',budget:0,w:d[4]}});
 var hubName={},grantName={},lineName={};
 HUBS.forEach(function(h){hubName[h.id]=h.name});GRANTS.forEach(function(g){grantName[g.id]=g.name});LINES.forEach(function(l){lineName[l.id]=l.name});
 function lineLabel(g,l){return LNAME[g]&&LNAME[g][l]||lineName[l]}
@@ -390,15 +390,15 @@ var raw=[];
 function pick(a){return a[Math.floor(rnd()*a.length)]}
 var GRANT_DESC={NUT1:'NUT',NUT2:'NUT',WSH1:'WSH',WSH2:'WSH',EDU1:'EDU',EDU2:'EDU'};
 function describe(acct,g){var d=DESCR[acct];return pick(Array.isArray(d)?d:d[GRANT_DESC[g]||'NUT'])}
-/* most postings carry the type code of one of the grant's activities (weighted); a few carry no code, a retired code,
-   or a type this grant does not fund */
+/* most postings carry the code of one of the grant's activities (weighted); a few carry no code, a retired code,
+   or the code of another grant's activity */
 function actFor(g){
-  var r=rnd2();if(r<0.03)return'';if(r<0.05)return'A199';
+  var r=rnd2();if(r<0.03)return'';if(r<0.05)return'2600099';
   var mine=ACTS.filter(function(a){return a.grant===g&&a.status==='Active'});
-  if(r<0.07){var types=mine.map(function(a){return a.type}),other=ACTS.filter(function(a){return types.indexOf(a.type)<0});return other[Math.floor(rnd2()*other.length)].type}
+  if(r<0.07){var other=ACTS.filter(function(a){return a.grant!==g});return other[Math.floor(rnd2()*other.length)].code}
   var tw=mine.reduce(function(t,a){return t+a.w},0),x=rnd2()*tw,i;
-  for(i=0;i<mine.length;i++){x-=mine[i].w;if(x<=0)return mine[i].type}
-  return mine[mine.length-1].type;
+  for(i=0;i<mine.length;i++){x-=mine[i].w;if(x<=0)return mine[i].code}
+  return mine[mine.length-1].code;
 }
 /* split a total into n positive amounts that add up exactly, in whole tens of shillings */
 function parts(total,n){
@@ -515,7 +515,7 @@ function addRuleRaw(target,when,value,prio,by,note){ruleSeq++;var r={id:'R-'+('0
 [['5100','PER'],['5110','PER'],['5200','TRV'],['5300','SUP'],['5400','SUP'],['5500','PTN'],['5900','IND']].forEach(function(x){addRuleRaw('line',[{f:'acct',v:x[0]}],x[1])});
 HUBS.forEach(function(h){addRuleRaw('hub',[{f:'cc',v:h.id}],h.id)});
 GRANTS.forEach(function(g){addRuleRaw('grant',[{f:'grant',v:g.id}],g.id)});
-ACTS.forEach(function(a){addRuleRaw('act',[{f:'act',v:a.type},{f:'grant',v:a.grant}],a.id)});
+ACTS.forEach(function(a){addRuleRaw('act',[{f:'act',v:a.code}],a.id)});
 var over={};
 var A={},Cm={},unm=[];
 function fieldVal(e,f){return f==='acct'?e.acct:f==='cc'?e.cc:f==='grant'?(e.grant||''):f==='act'?(e.act||''):''}
@@ -531,17 +531,18 @@ function resolve(e,target,rules){
 }
 function entryById(id){for(var i=0;i<entries.length;i++)if(entries[i].id===id)return entries[i]}
 function hubForEntry(e){return resolve(e,'hub').value}
+function actFits(act,grant){var a=act&&actById(act);return a&&a.grant===grant?act:''}
 function mapEntry(e,rules){
   var rh=resolve(e,'hub',rules),rg=resolve(e,'grant',rules),rl=resolve(e,'line',rules),ra=resolve(e,'act',rules);
   if(over[e.id]){
     var o=over[e.id],g=o.grant||rg.value,hb=o.hub||rh.value,ln=o.line||rl.value;
-    if(g&&hb&&ln)return{ok:true,grant:g,hub:hb,line:ln,act:ra.value,over:true};
+    if(g&&hb&&ln)return{ok:true,grant:g,hub:hb,line:ln,act:actFits(ra.value,g),over:true};
   }
   if(!rh.value)return{ok:false,reason:rh.clash?'Rules clash for cost centre '+e.cc:'Cost centre not recognised',need:'hub'};
   if(!e.grant)return{ok:false,reason:'No grant code on the entry',need:'grant',blank:true};
   if(!rg.value)return{ok:false,reason:rg.clash?'Rules clash for grant code '+e.grant:'Grant code '+e.grant+' not recognised',need:'grant'};
   if(!rl.value)return{ok:false,reason:rl.clash?'Rules clash for account '+e.acct:'Account '+e.acct+' has no budget line',need:'line'};
-  return{ok:true,grant:rg.value,hub:rh.value,line:rl.value,act:ra.value};
+  return{ok:true,grant:rg.value,hub:rh.value,line:rl.value,act:actFits(ra.value,rg.value)};
 }
 function recompute(){
   A={};Cm={};unm=[];
@@ -697,13 +698,13 @@ function themeTable(f){
     rows+='<tr class="l1"><td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+key+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(th)+'">'+(open?'▾':'▸')+'</button><div>'+esc(th)+'<small>'+list.length+' activities across '+Object.keys(gs).length+' grant'+(Object.keys(gs).length>1?'s':'')+'</small></div></div></td>'+tcells(plan,act,full,P)+'</tr>';
     if(open)list.forEach(function(a){
       var key2=key+'|act:'+a.id;S.rowF[key2]={f:{g:a.grant,act:a.id},title:a.name+' · '+grantName[a.grant]};
-      rows+='<tr class="l2"><td><button type="button" class="link" data-act="drill" data-arg="'+key2+'">'+esc(a.name)+'</button><div class="note">'+esc(grantName[a.grant])+' ('+esc(grantById(a.grant).donor)+') · type '+esc(a.type)+'</div></td>'+tcells(a.budget,spend[a.id]||0,full,P)+'</tr>';
+      rows+='<tr class="l2"><td><button type="button" class="link" data-act="drill" data-arg="'+key2+'">'+esc(a.name)+'</button><div class="note">'+esc(grantName[a.grant])+' ('+esc(grantById(a.grant).donor)+') · code '+esc(a.code)+'</div></td>'+tcells(a.budget,spend[a.id]||0,full,P)+'</tr>';
     });
   });
-  if(none>0.5){rows+='<tr class="l2"><td>Not mapped to an activity<div class="note">non-staff entries with no activity code, or one the grant does not fund</div></td>'+tcells(0,none,false,P)+'</tr>';ta+=none}
+  if(none>0.5){rows+='<tr class="l2"><td>Not mapped to an activity<div class="note">non-staff entries with no activity code, a retired one, or one that belongs to another grant</div></td>'+tcells(0,none,false,P)+'</tr>';ta+=none}
   rows+='<tr class="tot"><td>Total</td>'+tcells(tp,ta,full,P)+'</tr>';
   return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>Theme and activity</th><th class="num">Planning budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<p class="note" style="margin:10px 0 0">An activity belongs to one grant, so the same kind of work funded by two donors appears as two separate rows, never one. The theme is only a label that groups them. Staff and indirect costs carry no activity and are not in this view.'+(full?'':' Planning budgets are set for the whole country office, so they are not shown for a single hub.')+'</p></div>';
+    '<p class="note" style="margin:10px 0 0">An activity belongs to one grant and has its own code, so the same kind of work funded by two donors appears as two separate rows, never one. The theme is only a label that groups them. Staff and indirect costs carry no activity and are not in this view.'+(full?'':' Planning budgets are set for the whole country office, so they are not shown for a single hub.')+'</p></div>';
 }
 
 function merge(f,key,val){var o={g:f.g,h:f.h,l:f.l};o[key]=val;return o}
@@ -1024,16 +1025,16 @@ function importPanel(key,can){
   }
   IMP.codes={
     title:'Paste code mappings from Excel',header:'type',
-    help:'Three columns: the type of code (cost centre, grant code or activity code), the code as it appears in the ledger, and what it maps to. A hub or funding source can be given by code or name. An activity is given by its id, such as NUT1-A101, because several grants can have an activity of the same name. Each row becomes a rule; an activity rule also carries the activity’s grant.',
+    help:'Three columns: the type of code (cost centre, grant code or activity code), the code as it appears in the ledger, and what it maps to. A hub or funding source can be given by code or name. An activity is given by its activity code, which is unique across the organisation. Each row becomes a rule.',
     placeholder:'Cost centre\tMSA\tNBO',
-    sample:'type\tledger code\tmaps to\nCost centre\tMSA\tNBO\nGrant code\tNUT-OLD\tNUT1\nActivity code\tA199\tNUT1-A101\nCost centre\tGRS-2\tGarissa\nGrant code\tXYZ-1\tOutreach fund',
+    sample:'type\tledger code\tmaps to\nCost centre\tMSA\tNBO\nGrant code\tNUT-OLD\tNUT1\nActivity code\t2600099\t2600100\nCost centre\tGRS-2\tGarissa\nGrant code\tXYZ-1\tOutreach fund',
     parse:function(c,recs){
       var k=KINDS[(c[0]||'').toLowerCase()];if(!k)return{err:'The type "'+(c[0]||'')+'" is not one of cost centre, grant code or activity code.'};
       if(!c[1])return{err:'The ledger code is empty.'};
       var v=findTarget(k[1],c[2]||'');if(!v)return{err:'"'+(c[2]||'')+'" is not a known '+TARGET_LABEL[k[1]].toLowerCase()+'.'};
-      var when=[{f:k[0],v:c[1]}];if(k[1]==='act')when.push({f:'grant',v:actById(v).grant});
+      var when=[{f:k[0],v:c[1]}];
       var dup=RULES.filter(function(r){return r.target===k[1]&&sameConds(r.when,when)})[0];
-      if(dup)return{err:FIELD_LABEL[k[0]]+' '+c[1]+(k[1]==='act'?' for that grant':'')+' is already mapped by rule '+dup.id+'. Remove that rule first to change it.'};
+      if(dup)return{err:FIELD_LABEL[k[0]]+' '+c[1]+' is already mapped by rule '+dup.id+'. Remove that rule first to change it.'};
       if(recs.some(function(r){return r.t===k[1]&&sameConds(r.when,when)}))return{err:FIELD_LABEL[k[0]]+' '+c[1]+' appears twice in what you pasted.'};
       return{rec:{t:k[1],code:c[1],value:v,when:when}};
     },
@@ -1169,15 +1170,14 @@ function mapCodes(){
       (can?'<tr><td><input class="ed" id="cb-'+k[0]+'-code" placeholder="New ledger code" aria-label="New '+k[3].toLowerCase()+'"></td><td><select class="ed" id="cb-'+k[0]+'-val" aria-label="Maps to"><option value="">Choose…</option>'+valueOptions(k[1]).map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td></td><td></td><td><button class="btn" type="button" data-act="cbadd" data-arg="'+k[0]+'">Add</button></td></tr>':'')+
       '</tbody></table></div></div>';
   });
-  /* activities: the grant code and the activity type code together pick the activity */
-  var ar=RULES.filter(function(r){return r.target==='act'}).sort(function(a,b){var x=ACTS.indexOf(actById(a.value)),y=ACTS.indexOf(actById(b.value));return x-y});
-  h+='<div class="panel"><h2>Activity codes to activities</h2><p class="note" style="margin-top:0">The ledger carries an activity type code that several grants can share. The grant code and the type code together identify the activity, so the same type under two grants is two separate activities.</p><div class="scroll"><table class="st" style="min-width:700px"><thead><tr><th>Activity code</th><th>Grant code</th><th>Maps to activity</th><th class="num">Entries using it</th><th>Rule</th><th></th></tr></thead><tbody>'+
+  /* activities: one code, one activity, and the activity brings its grant */
+  var ar=RULES.filter(function(r){return r.target==='act'&&r.when.length===1&&r.when[0].f==='act'}).sort(function(a,b){return ACTS.indexOf(actById(a.value))-ACTS.indexOf(actById(b.value))});
+  h+='<div class="panel"><h2>Activity codes to activities</h2><p class="note" style="margin-top:0">An activity code is unique across the organisation and belongs to one grant. The same kind of work under two grants has two codes and is tracked as two activities. A posting whose activity belongs to a different grant than its grant code still counts toward the grant, but to no activity.</p><div class="scroll"><table class="st" style="min-width:700px"><thead><tr><th>Activity code in the ledger</th><th>Maps to activity</th><th>Grant</th><th class="num">Entries using it</th><th>Rule</th><th></th></tr></thead><tbody>'+
     ar.map(function(r){
-      var ac=r.when.filter(function(c){return c.f==='act'})[0],gc=r.when.filter(function(c){return c.f==='grant'})[0],a=actById(r.value);
-      var n=entries.filter(function(e){return fieldVal(e,'act')===(ac&&ac.v)&&(!gc||e.grant===gc.v)}).length;
-      return'<tr><td class="mono">'+esc(ac?ac.v:'')+'</td><td class="mono">'+(gc?esc(gc.v):'<span class="muted">any</span>')+'</td><td>'+esc(a?a.name:r.value)+(a?'<div class="note">'+esc(grantName[a.grant])+' · '+esc(a.theme)+'</div>':'')+'</td><td class="num">'+n+'</td><td><span class="mono">'+r.id+'</span>'+(r.by==='Base set'?'':' <span class="tag">added now</span>')+'</td><td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>';
+      var code=r.when[0].v,a=actById(r.value),n=entries.filter(function(e){return fieldVal(e,'act')===code}).length;
+      return'<tr><td class="mono">'+esc(code)+'</td><td>'+esc(a?a.name:r.value)+(a?'<div class="note">'+esc(a.theme)+'</div>':'')+'</td><td>'+(a?esc(grantName[a.grant])+'<div class="note mono">'+esc(a.grant)+'</div>':'')+'</td><td class="num">'+n+'</td><td><span class="mono">'+r.id+'</span>'+(r.by==='Base set'?'':' <span class="tag">added now</span>')+'</td><td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>';
     }).join('')+
-    (can?'<tr><td><input class="ed" id="cb-act-code" placeholder="New code" aria-label="New activity code"></td><td class="note">taken from the activity</td><td><select class="ed" id="cb-act-val" aria-label="Maps to activity"><option value="">Choose…</option>'+valueOptions('act').map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td></td><td></td><td><button class="btn" type="button" data-act="cbadd" data-arg="act">Add</button></td></tr>':'')+
+    (can?'<tr><td><input class="ed" id="cb-act-code" placeholder="New code" aria-label="New activity code"></td><td colspan="2"><select class="ed" id="cb-act-val" aria-label="Maps to activity"><option value="">Choose…</option>'+valueOptions('act').map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td></td><td></td><td><button class="btn" type="button" data-act="cbadd" data-arg="act">Add</button></td></tr>':'')+
     '</tbody></table></div></div>';
   return h+importPanel('codes',can);
 }
@@ -1244,21 +1244,21 @@ function fundLines(g,can){
 }
 function fundActs(g,can){
   var list=ACTS.filter(function(a){return a.grant===g.id}),plan=0,themeOpts=THEMES.map(function(t){return[t,t]});
-  var codes={};RULES.forEach(function(r){if(r.target==='act'&&r.when.some(function(c){return c.f==='grant'&&c.v===g.id})){var c=r.when.filter(function(x){return x.f==='act'})[0];if(c)(codes[r.value]=codes[r.value]||[]).push(c.v)}});
+  var codes={};RULES.forEach(function(r){if(r.target==='act'&&r.when.length===1&&r.when[0].f==='act')(codes[r.value]=codes[r.value]||[]).push(r.when[0].v)});
   var rows=list.map(function(a){
-    var sp=actSpend(a),n=entries.filter(function(e){return e.map.ok&&e.map.act===a.id}).length,twins=ACTS.filter(function(b){return b.type===a.type&&b.grant!==a.grant});plan+=a.budget;
-    return'<tr><td class="mono">'+esc(a.type)+'</td><td style="min-width:230px">'+ed('act',a.id,'name',a.name,{can:can,label:'Name of '+a.id})+(twins.length?'<div class="note">The same type is funded by '+twins.map(function(b){return esc(grantName[b.grant])}).join(', ')+'. It is tracked there as a separate activity.</div>':'')+'</td>'+
+    var sp=actSpend(a),n=entries.filter(function(e){return e.map.ok&&e.map.act===a.id}).length,twins=ACTS.filter(function(b){return b.name===a.name&&b.grant!==a.grant});plan+=a.budget;
+    return'<tr><td class="mono">'+esc(a.code)+'</td><td style="min-width:230px">'+ed('act',a.id,'name',a.name,{can:can,label:'Name of '+a.id})+(twins.length?'<div class="note">The same activity is also funded by '+twins.map(function(b){return esc(grantName[b.grant])}).join(', ')+', under its own code. Each is tracked separately.</div>':'')+'</td>'+
       '<td style="min-width:150px">'+ed('act',a.id,'theme',a.theme,{can:can,sel:themeOpts,label:'Theme of '+a.id})+'</td><td style="min-width:92px">'+ed('act',a.id,'status',a.status,{can:can,sel:[['Active','Active'],['Closed','Closed']],label:'Status of '+a.id})+'</td>'+
       '<td style="min-width:112px">'+ed('act',a.id,'budget',nfmt(a.budget),{can:can,num:true,label:'Planning budget of '+a.id})+'</td><td class="num">'+nfmt(sp)+'<div class="note">'+(a.budget?Math.round(sp/a.budget*100)+'% used':'')+'</div></td>'+
-      '<td><div class="chips">'+(codes[a.id]||[]).map(function(c){return'<span class="chip m">'+esc(c)+' + '+esc(g.id)+'</span>'}).join('')+'</div><div class="note" style="margin-top:4px">'+n+' entries'+(can&&!n?' \u00b7 <button class="link" type="button" data-act="actdel" data-arg="'+a.id+'" aria-label="Remove '+a.id+'">Remove</button>':'')+'</div></td></tr>';
+      '<td><div class="chips">'+(codes[a.id]||[]).map(function(c){return'<span class="chip m">ledger '+esc(c)+'</span>'}).join('')+'</div><div class="note" style="margin-top:4px">'+n+' entries'+(can&&!n?' \u00b7 <button class="link" type="button" data-act="actdel" data-arg="'+a.id+'" aria-label="Remove '+a.id+'">Remove</button>':'')+'</div></td></tr>';
   }).join('');
-  var addrow=can?'<tr><td><input class="ed" id="aa-code" placeholder="Type code" aria-label="New activity type code" style="min-width:72px"></td><td><input class="ed" id="aa-name" placeholder="Name of the activity" aria-label="New activity name"></td><td><select class="ed" id="aa-theme" aria-label="Theme">'+themeOpts.map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td>Active</td><td><input class="ed num" id="aa-budget" inputmode="numeric" placeholder="Budget" aria-label="New planning budget"></td><td></td><td><button class="btn sm" type="button" data-act="actadd">Add</button></td></tr>':'';
+  var addrow=can?'<tr><td><input class="ed" id="aa-code" placeholder="Code" aria-label="New activity code" style="min-width:72px"></td><td><input class="ed" id="aa-name" placeholder="Name of the activity" aria-label="New activity name"></td><td><select class="ed" id="aa-theme" aria-label="Theme">'+themeOpts.map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td>Active</td><td><input class="ed num" id="aa-budget" inputmode="numeric" placeholder="Budget" aria-label="New planning budget"></td><td></td><td><button class="btn sm" type="button" data-act="actadd">Add</button></td></tr>':'';
   var bu=grantBudgetUSD(g.id)-grantBudgetUSD(g.id,'PER')-grantBudgetUSD(g.id,'IND'),pct=bu?Math.round(plan/bu*100):0;
   var gaps=entries.filter(function(e){return e.map.ok&&e.map.grant===g.id&&!e.map.act&&e.map.line!=='PER'&&e.map.line!=='IND'&&e.m<=S.period}),gapUSD=gaps.reduce(function(t,e){return t+e.kes/FX},0);
   var gcodes={};gaps.forEach(function(e){gcodes[e.act||'no code']=1});
-  return msgBar('act')+'<div class="scroll"><table class="st tight" style="min-width:940px"><thead><tr><th>Type</th><th>Activity</th><th>Theme</th><th>Status</th><th class="num">Planning budget (USD)</th><th class="num">Spend to date (USD)</th><th>Ledger mapping</th></tr></thead><tbody>'+rows+addrow+'</tbody></table></div>'+
-    '<p class="note" style="margin:10px 0 0">An activity belongs to this grant alone. Its planning budget covers the grant’s delivery costs (travel, supplies and partner grants, not staff or indirect costs) and adds up to <b>'+nfmt(plan)+' USD</b>, '+(bu?'<b>'+pct+'%</b> of the budget for those lines ('+nfmt(bu)+' USD)':'with no FY2026 budget to compare')+'. '+(pct>100?'<span class="neg">That is more than the budget.</span>':pct&&pct<90?'Part of the budget is not planned to an activity yet.':'')+' Spend comes from ledger entries whose grant code and activity type code map to the activity.</p>'+
-    (gaps.length?'<p class="note" style="margin:6px 0 0"><b>'+gaps.length+'</b> non-staff entries on this grant (USD '+nfmt(gapUSD)+') carry no activity code, a retired one, or a type this grant does not fund ('+Object.keys(gcodes).map(esc).join(', ')+'), so they count toward the grant but to no activity. Map the code on the <button class="link" type="button" data-act="gomap" data-arg="codes">Codes tab</button>.</p>':'')+
+  return msgBar('act')+'<div class="scroll"><table class="st tight" style="min-width:940px"><thead><tr><th>Code</th><th>Activity</th><th>Theme</th><th>Status</th><th class="num">Planning budget (USD)</th><th class="num">Spend to date (USD)</th><th>Ledger mapping</th></tr></thead><tbody>'+rows+addrow+'</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0">An activity belongs to this grant alone and has its own code. Its planning budget covers the grant’s delivery costs (travel, supplies and partner grants, not staff or indirect costs) and adds up to <b>'+nfmt(plan)+' USD</b>, '+(bu?'<b>'+pct+'%</b> of the budget for those lines ('+nfmt(bu)+' USD)':'with no FY2026 budget to compare')+'. '+(pct>100?'<span class="neg">That is more than the budget.</span>':pct&&pct<90?'Part of the budget is not planned to an activity yet.':'')+' Spend comes from ledger entries whose activity code maps to the activity and whose grant code maps to this grant.</p>'+
+    (gaps.length?'<p class="note" style="margin:6px 0 0"><b>'+gaps.length+'</b> non-staff entries on this grant (USD '+nfmt(gapUSD)+') carry no activity code, a retired one, or the code of another grant\u2019s activity ('+Object.keys(gcodes).map(esc).join(', ')+'), so they count toward the grant but to no activity. Map the code on the <button class="link" type="button" data-act="gomap" data-arg="codes">Codes tab</button>.</p>':'')+
     importPanel('acts',can);
 }
 IMP.funding={
@@ -1282,24 +1282,25 @@ IMP.funding={
   }
 };
 IMP.acts={
-  title:'Paste activities from Excel',header:'type',
-  help:'Columns: activity type code, name, theme (Nutrition, Water and hygiene or Education) and planning budget in USD. They are added to the grant selected above, and the grant code with the type code is mapped from the ledger. The same type code can be used under another grant; it becomes a separate activity.',
-  placeholder:'A106\tMobile outreach clinics\tNutrition\t80000',
-  sample:'type\tname\ttheme\tbudget\nA106\tCommunity health volunteers\tNutrition\t45000\nA107\tOutreach radio campaign\tEducation\t30000\nA101\tDuplicate type under this grant\tNutrition\t1000\nA108\tUnknown theme\tFarming\t20000\nA109\tMissing budget\tNutrition',
+  title:'Paste activities from Excel',header:'code',
+  help:'Columns: activity code (unique across the organisation), name, theme (Nutrition, Water and hygiene or Education) and planning budget in USD. They are added to the grant selected above, and the ledger code is mapped to each one. Two grants doing the same kind of work get two activities with two codes.',
+  placeholder:'2600500\tMobile outreach clinics\tNutrition\t80000',
+  sample:'code\tname\ttheme\tbudget\n2600500\tCommunity health volunteers\tNutrition\t45000\n2600507\tOutreach radio campaign\tEducation\t30000\n2600100\tCode already in use\tNutrition\t1000\n2600514\tUnknown theme\tFarming\t20000\n2600521\tMissing budget\tNutrition',
   parse:function(c,recs){
     var code=(c[0]||'').toUpperCase();
-    if(!/^[A-Z0-9-]{3,14}$/.test(code))return{err:'The type code must be 3 to 14 letters, digits or dashes.'};
-    var id=S.fs+'-'+code;
-    if(actById(id)||recs.some(function(r){return r.id===id}))return{err:'This grant already has an activity of type '+code+'.'};
+    if(!/^[A-Z0-9-]{3,14}$/.test(code))return{err:'The code must be 3 to 14 letters, digits or dashes.'};
+    var used=actById(code);
+    if(used)return{err:'Code '+code+' is already used by '+used.name+' under '+grantName[used.grant]+'.'};
+    if(recs.some(function(r){return r.id===code}))return{err:'Code '+code+' appears twice in what you pasted.'};
     if(!c[1])return{err:'The name is empty.'};
     var th=THEMES.filter(function(t){return t.toLowerCase()===(c[2]||'').toLowerCase()})[0];
     if(!th)return{err:'"'+(c[2]||'')+'" is not a theme. Use '+THEMES.join(', ')+'.'};
     var b=parseNum(c[3]);if(isNaN(b))return{err:'The planning budget must be a number.'};
-    return{rec:{id:id,grant:S.fs,type:code,name:c[1],theme:th,status:'Active',budget:b,w:1}};
+    return{rec:{id:code,code:code,grant:S.fs,name:c[1],theme:th,status:'Active',budget:b,w:1}};
   },
   apply:function(recs){
     recs.forEach(function(a){ACTS.push(a)});
-    applyRuleChange(recs.map(function(a){return{target:'act',when:[{f:'act',v:a.type},{f:'grant',v:a.grant}],value:a.id,note:'New activity'}}),[],'added '+recs.length+' activit'+(recs.length>1?'ies':'y')+' to '+grantName[S.fs]+' from Excel');
+    applyRuleChange(recs.map(function(a){return{target:'act',when:[{f:'act',v:a.code}],value:a.id,note:'New activity'}}),[],'added '+recs.length+' activit'+(recs.length>1?'ies':'y')+' to '+grantName[S.fs]+' from Excel');
   }
 };
 
@@ -1582,15 +1583,15 @@ document.addEventListener('click',function(ev){
   }
   else if(act==='actadd'){
     if(!canSetup())return;
-    var ac=($('aa-code').value||'').trim().toUpperCase(),an=($('aa-name').value||'').trim(),ath=$('aa-theme').value,ab=parseNum($('aa-budget').value||'0'),am='',aid=S.fs+'-'+ac;
-    if(!/^[A-Z0-9-]{3,14}$/.test(ac))am='The type code must be 3 to 14 letters, digits or dashes.';
-    else if(actById(aid))am='This grant already has an activity of type '+ac+'.';
+    var ac=($('aa-code').value||'').trim().toUpperCase(),an=($('aa-name').value||'').trim(),ath=$('aa-theme').value,ab=parseNum($('aa-budget').value||'0'),am='',aid=ac,ex=actById(ac);
+    if(!/^[A-Z0-9-]{3,14}$/.test(ac))am='The code must be 3 to 14 letters, digits or dashes.';
+    else if(ex)am='Code '+ac+' is already used by '+ex.name+' under '+grantName[ex.grant]+'.';
     else if(!an)am='Give the activity a name.';
     else if(isNaN(ab))am='The planning budget must be a number.';
     S.msg.act=am?'New activity: '+am:'';
     if(am){render();return}
-    ACTS.push({id:aid,grant:S.fs,type:ac,name:an,theme:ath,status:'Active',budget:ab,w:1});
-    applyRuleChange([{target:'act',when:[{f:'act',v:ac},{f:'grant',v:S.fs}],value:aid,note:'New activity'}],[],'added activity '+aid+' to '+grantName[S.fs]);render();
+    ACTS.push({id:aid,code:ac,grant:S.fs,name:an,theme:ath,status:'Active',budget:ab,w:1});
+    applyRuleChange([{target:'act',when:[{f:'act',v:ac}],value:aid,note:'New activity'}],[],'added activity '+aid+' to '+grantName[S.fs]);render();
   }
   else if(act==='actdel'){
     if(!canSetup())return;var da=actById(arg);if(!da)return;
@@ -1634,9 +1635,8 @@ document.addEventListener('click',function(ev){
     var code=($('cb-'+arg+'-code').value||'').trim(),val=$('cb-'+arg+'-val').value;
     if(!code||!val){toast('Give the ledger code and choose what it maps to.');return}
     var tgt=arg==='act'?'act':arg==='cc'?'hub':'grant',lab=arg==='cc'?'Cost centre':arg==='grant'?'Grant code':'Activity code',when=[{f:arg,v:code}];
-    if(arg==='act')when.push({f:'grant',v:actById(val).grant});
-    if(RULES.some(function(r){return r.target===tgt&&sameConds(r.when,when)})){toast(lab+' '+code+' is already mapped'+(arg==='act'?' for that grant':'')+'. Remove its rule first.');return}
-    applyRuleChange([{target:tgt,when:when,value:val,note:'Added on the Codes tab'}],[],'added a rule: '+lab.toLowerCase()+' '+code+(arg==='act'?' with grant '+when[1].v:'')+' to '+valueLabel(tgt,val));
+    if(RULES.some(function(r){return r.target===tgt&&sameConds(r.when,when)})){toast(lab+' '+code+' is already mapped. Remove its rule first.');return}
+    applyRuleChange([{target:tgt,when:when,value:val,note:'Added on the Codes tab'}],[],'added a rule: '+lab.toLowerCase()+' '+code+' to '+valueLabel(tgt,val));
     render();
   }
   else if(act==='spopen'){(S.sp[arg]=S.sp[arg]||{text:'',res:null}).open=true;render()}
