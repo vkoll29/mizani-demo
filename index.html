@@ -98,6 +98,12 @@ table{border-collapse:collapse;width:100%}
 .tbl tr.l1 td{font-weight:600;background:var(--surface)}
 .tbl tr.l2 td{background:var(--surface2)}
 .tbl tr.l2 td:first-child{padding-left:38px}
+.tbl tr.l3 td{background:var(--surface)}
+.tbl tr.l3 td:first-child{padding-left:62px}
+.tbl tr.l4 td{background:var(--surface2)}
+.tbl tr.l4 td:first-child{padding-left:86px}
+.tbl tr.l3:hover td,.tbl tr.l4:hover td{background:var(--accent-soft)}
+.tbl tr.l3 .name,.tbl tr.l4 .name{gap:6px}
 .tbl tr.tot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0}
 .tbl tr.l2:hover td,.tbl tr.l1:hover td{background:var(--accent-soft)}
 .name{display:flex;align-items:center;gap:8px}
@@ -307,10 +313,22 @@ var LNAME={
   WSH2:{PER:'Programme personnel',TRV:'Transport',SUP:'Sanitation materials',PTN:'Implementing partners',IND:'Indirect costs (10%)'},
   EDU1:{PER:'Programme staff',TRV:'Transport',SUP:'Learning materials and equipment',PTN:'Partner organisations',IND:'Indirect costs (10%)'},
   EDU2:{PER:'Personnel',TRV:'Travel',SUP:'Supplies',PTN:'Sub-grants',IND:'Management fee (10%)'}};
-var THEMES=['Nutrition','Water and hygiene','Education'];
+/* A project is the programme area or support function a cost belongs to. Activities sit under programme projects;
+   support positions sit under functions. One project can be funded by several grants. */
+var PROJECTS=['Nutrition','Water and hygiene','Education'];
+var FUNCTIONS=['Finance','Grant management','Logistics','Monitoring and evaluation','Country management'];
+var ALL_PROJECTS=PROJECTS.concat(FUNCTIONS);
+var TITLE_PROJECT={'Country finance lead':'Finance','Hub finance manager':'Finance','Finance officer':'Finance','Logistics officer':'Logistics','Driver':'Logistics','MEAL officer':'Monitoring and evaluation','Safeguarding officer':'Country management',
+  'Nutrition technical advisor':'Nutrition','Nutrition officer':'Nutrition','Nutrition assistant':'Nutrition','Nutrition programme manager':'Nutrition','School feeding officer':'Nutrition',
+  'WASH engineer':'Water and hygiene','WASH officer':'Water and hygiene','WASH programme manager':'Water and hygiene','Hygiene promotion officer':'Water and hygiene','Community mobilisation officer':'Water and hygiene',
+  'Education programme manager':'Education','Education officer':'Education','Teacher mentor':'Education'};
+function titleProject(title,type){return TITLE_PROJECT[title]||(type==='Support'?'Country management':'')}
+/* the closest listed value to something typed, for "did you mean" messages */
+function lev(a,b){var m=[],i,j;for(i=0;i<=a.length;i++)m[i]=[i];for(j=1;j<=b.length;j++)m[0][j]=j;for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+function closest(list,txt){var t=(txt||'').toLowerCase().trim(),best='',bd=99;list.forEach(function(x){var d=lev(t,x.toLowerCase());if(d<bd){bd=d;best=x}});return bd<=Math.max(3,Math.round(t.length/4))?best:''}
 /* An activity belongs to exactly one grant, and its code is unique across the whole organisation, so the code alone
    identifies the activity and its grant. Two grants funding the same kind of work get two activities with two codes,
-   never one merged one. The theme is only a label for reporting across grants. The last number is a weight for the
+   never one merged one. The project is the programme area the work belongs to, and one project can be funded by several grants. The last number is a weight for the
    demo data. */
 var ACT_DEF=[
   ['NUT1','2600100','Community nutrition screening','Nutrition',4],['NUT1','2600113','Therapeutic feeding centres','Nutrition',3],['NUT1','2600126','Caregiver counselling and training','Nutrition',2],
@@ -319,7 +337,7 @@ var ACT_DEF=[
   ['WSH2','2600217','School and clinic sanitation','Water and hygiene',4],['WSH2','2600230','Hygiene promotion','Water and hygiene',2],['WSH2','2600243','Handwashing stations','Water and hygiene',2],
   ['EDU1','2600256','Girls’ scholarships and bursaries','Education',4],['EDU1','2600269','Safe school clubs','Education',2],['EDU1','2600282','Teacher mentoring','Education',2],
   ['EDU2','2600295','Teacher mentoring','Education',2],['EDU2','2600308','School feeding','Nutrition',4],['EDU2','2600321','Learning materials','Education',2]];
-var ACTS=ACT_DEF.map(function(d){return{id:d[1],code:d[1],grant:d[0],name:d[2],theme:d[3],status:'Active',budget:0,w:d[4]}});
+var ACTS=ACT_DEF.map(function(d){return{id:d[1],code:d[1],grant:d[0],name:d[2],project:d[3],status:'Active',budget:0,w:d[4]}});
 var hubName={},grantName={},lineName={};
 HUBS.forEach(function(h){hubName[h.id]=h.name});GRANTS.forEach(function(g){grantName[g.id]=g.name});LINES.forEach(function(l){lineName[l.id]=l.name});
 function lineLabel(g,l){return LNAME[g]&&LNAME[g][l]||lineName[l]}
@@ -361,13 +379,15 @@ Object.keys(BASE).forEach(function(k){
   var m={};['PER','TRV','SUP','PTN'].forEach(function(l){m[l]=spread(Math.round(BASE[k][l]*SCALE))});m.IND=indirect(m);
   B[k]={approved:m,draft:clone(m),status:'approved',version:2};
 });
-/* each grant's planning budget for its activities is shared out by weight over its non-staff budget lines */
+/* each grant's planning budget for its activities is shared out by weight over its non-staff budget lines; two grants are planned a little over or under */
+var PLANF={WSH1:1.09,EDU2:0.86};
 (function(){
   GRANTS.forEach(function(g){
     var list=ACTS.filter(function(a){return a.grant===g.id}),ns=0,tw=0,used=0;
     Object.keys(B).forEach(function(k){if(k.split('|')[0]===g.id)['TRV','SUP','PTN'].forEach(function(l){ns+=sum(B[k].approved[l])})});
     list.forEach(function(a){tw+=a.w});
-    list.forEach(function(a,i){a.budget=i===list.length-1?ns-used:Math.round(ns*a.w/tw/1000)*1000;used+=a.budget});
+    var tgt=Math.round(ns*(PLANF[g.id]||1)/1000)*1000;
+    list.forEach(function(a,i){a.budget=i===list.length-1?tgt-used:Math.round(tgt*a.w/tw/1000)*1000;used+=a.budget});
   });
 })();
 /* how closely each cell follows its budget; anything missing runs at 96% */
@@ -488,7 +508,7 @@ var POSITIONS=[];
   var n=0,starts=['2025-01-01','2025-04-01','2025-07-01'];
   HUBS.forEach(function(h){STAFF_T[h.id].forEach(function(t){
     n++;
-    POSITIONS.push({no:'E-'+(1000+n),name:FIRST[n%30]+' '+LAST[(n*7)%20],title:t[0],type:t[1],hub:h.id,salary:Math.round(t[2]*1000*SALSCALE/5000)*5000,
+    POSITIONS.push({no:'E-'+(1000+n),name:FIRST[n%30]+' '+LAST[(n*7)%20],title:t[0],type:t[1],project:titleProject(t[0],t[1]),hub:h.id,salary:Math.round(t[2]*1000*SALSCALE/5000)*5000,
       start:starts[n%3],end:'',status:'Active',splits:t[3].map(function(x){return{src:x[0],pct:x[1],from:'',to:''}})});
   })});
   function byTitle(hub,title,k){return POSITIONS.filter(function(x){return x.hub===hub&&x.title===title})[k||0]}
@@ -499,7 +519,7 @@ var POSITIONS=[];
   [['NBO','Education officer',0,'2026-06-30','2026-07-01'],['KSM','WASH engineer',1,'2026-08-31','2026-09-01']].forEach(function(x){
     var old=byTitle(x[0],x[1],x[2]),k=POSITIONS.length+1;
     old.end=x[3];old.status='Ended';
-    POSITIONS.push({no:'E-'+(1000+k),name:FIRST[(k+11)%30]+' '+LAST[(k*7+3)%20],title:old.title,type:old.type,hub:old.hub,salary:Math.round(old.salary*1.05/5000)*5000,start:x[4],end:'',status:'Active',
+    POSITIONS.push({no:'E-'+(1000+k),name:FIRST[(k+11)%30]+' '+LAST[(k*7+3)%20],title:old.title,type:old.type,project:old.project,hub:old.hub,salary:Math.round(old.salary*1.05/5000)*5000,start:x[4],end:'',status:'Active',
       splits:old.splits.map(function(sp){return{src:sp.src,pct:sp.pct,from:'',to:''}})});
   });
 })();
@@ -596,8 +616,8 @@ function status(x){
 }
 
 /* ---------- chrome ---------- */
-var NAV=[['Work',[['bva','Budget vs actual'],['budgets','Budgets'],['ledger','Ledger intake']]],['Setup',[['funding','Funding sources'],['staff','Staff and funding'],['maps','Mappings']]]];
-var VIEW_IDS=['bva','budgets','ledger','funding','staff','maps'];
+var NAV=[['Work',[['bva','Budget vs actual'],['coverage','Coverage'],['budgets','Budgets'],['ledger','Ledger intake']]],['Setup',[['funding','Funding sources'],['staff','Staff and funding'],['maps','Mappings']]]];
+var VIEW_IDS=['bva','coverage','budgets','ledger','funding','staff','maps'];
 function chrome(){
   $('role').innerHTML=ROLES.map(function(r){return'<option value="'+r.id+'"'+(r.id===S.role?' selected':'')+'>'+esc(r.name)+'</option>'}).join('');
   ['USD','KES'].forEach(function(c){$('cur-'+c).setAttribute('aria-pressed',S.cur===c)});
@@ -611,7 +631,7 @@ function chrome(){
     if(v[0]==='staff'){var n=staffIssueCount();if(n)b='<span class="badge w" aria-label="'+n+' positions need their funding fixed">'+n+'</span>'}
     return'<button type="button" data-act="nav" data-arg="'+v[0]+'"'+(S.view===v[0]?' aria-current="page"':'')+'>'+v[1]+b+'</button>';
   }).join('')}).join('');
-  rail+='<h6>Later phases</h6><div class="later">Forecast and alerts</div><div class="later">Funding gap</div><div class="later">Timesheets and staffing</div><div class="later">Donor reports</div>';
+  rail+='<h6>Later phases</h6><div class="later">Forecast and alerts</div><div class="later">Funding pipeline</div><div class="later">Timesheets and staffing</div><div class="later">Donor reports</div>';
   $('rail').innerHTML=rail;
   var bn='';
   var q=Object.keys(S.queue).length;
@@ -638,7 +658,7 @@ function renderBVA(){
      '<div class="field"><label for="f-grant">Grant</label><select id="f-grant" data-change="grant">'+grantOpts+'</select></div>'+
      '<div class="field"><label for="f-period">Period</label><select id="f-period" data-change="period">'+perOpts+'</select></div>'+
      '<div class="field"><label id="grpl">Group by</label><div class="seg" role="group" aria-labelledby="grpl">'+
-       [['grant','Grant'],['hub','Hub'],['line','Budget line'],['theme','Theme']].map(function(m){return'<button type="button" data-act="mode" data-arg="'+m[0]+'" aria-pressed="'+(S.mode===m[0])+'">'+m[1]+'</button>'}).join('')+'</div></div></div>';
+       [['grant','Grant'],['hub','Hub'],['line','Budget line'],['project','Project']].map(function(m){return'<button type="button" data-act="mode" data-arg="'+m[0]+'" aria-pressed="'+(S.mode===m[0])+'">'+m[1]+'</button>'}).join('')+'</div></div></div>';
   h+='<div class="stats">'+
     stat('Annual budget',fmt(tot.b),'approved versions, FY2026')+
     stat('Actual to date',fmt(tot.a),tot.b?Math.round(tot.a/tot.b*100)+'% of annual budget':'')+
@@ -655,7 +675,7 @@ function stat(l,v,s){return'<div class="stat"><small>'+l+'</small><strong>'+v+'<
 var DIMS={grant:{list:GRANTS,key:'g'},hub:{list:HUBS,key:'h'},line:{list:LINES,key:'l'}};
 var ORDER={grant:['grant','line'],hub:['hub','grant'],line:['line','grant']};
 function table(base){
-  if(S.mode==='theme')return themeTable(base);
+  if(S.mode==='project')return projectTable(base);
   var ord=ORDER[S.mode],d1=DIMS[ord[0]],d2=DIMS[ord[1]],rows='',P=S.period;
   S.rowF={};
   if(S.openFor!==S.mode){S.open={};S.openFor=S.mode;var fi=d1.list.filter(function(x){var ff=merge(base,d1.key,x.id);return agg(ff).b>0})[0];if(fi)S.open[ord[0]+':'+fi.id]=true}
@@ -675,26 +695,26 @@ function table(base){
   rows+='<tr class="tot"><td>Total</td>'+cells(t)+'</tr>';
   return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>'+({grant:'Grant',hub:'Hub',line:'Budget line'})[S.mode]+'</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
-/* the theme view: delivery costs by theme, with every grant's activities listed separately underneath */
+/* the project view: delivery costs by project, with every grant's activities listed separately underneath */
 function tcells(plan,act,full,P){
   if(!full)return'<td class="num">–</td><td class="num">'+fmt(act)+'</td><td class="num">–</td><td class="num">–</td><td></td><td></td>';
   var x={b:plan,btd:plan*P/12,a:act,c:0,av:plan-act},st=status(x),pct=plan?Math.round(act/plan*100):0,pa=Math.min(100,plan?act/plan*100:0),pp=Math.min(100,P/12*100);
   return'<td class="num">'+fmt(plan)+'</td><td class="num">'+fmt(act)+'</td><td class="num">–</td><td class="num'+(x.av<0?' neg':'')+'">'+fmt(x.av)+'</td>'+
     '<td><div class="usedcell"><div class="bar'+(x.av<0?' over':'')+'" style="flex:1" title="'+pct+'% of the planning budget spent; '+Math.round(pp)+'% of the year has passed"><i class="a" style="width:'+pa+'%"></i><i class="p" style="left:calc('+pp+'% - 1px)"></i></div><span>'+pct+'%</span></div></td><td><span class="pill '+st[0]+'">'+st[1]+'</span></td>';
 }
-function themeTable(f){
+function projectTable(f){
   var P=S.period,full=role().hubs.length===HUBS.length&&!S.scope,rows='',tp=0,ta=0,spend={},none=0;
-  if(S.openFor!==S.mode){S.open={};S.openFor=S.mode;S.open['theme:'+THEMES[0]]=true}
+  if(S.openFor!==S.mode){S.open={};S.openFor=S.mode;S.open['project:'+PROJECTS[0]]=true}
   S.rowF={};
   entries.forEach(function(e){
     var m=e.map;if(!m.ok||e.m>P||!hubOK(m.hub)||(f.g&&m.grant!==f.g))return;
     if(m.act)spend[m.act]=(spend[m.act]||0)+e.kes/FX;
     else if(m.line!=='PER'&&m.line!=='IND')none+=e.kes/FX;
   });
-  THEMES.forEach(function(th){
-    var list=ACTS.filter(function(a){return a.theme===th&&(!f.g||a.grant===f.g)});if(!list.length)return;
+  PROJECTS.forEach(function(th){
+    var list=ACTS.filter(function(a){return a.project===th&&(!f.g||a.grant===f.g)});if(!list.length)return;
     var plan=0,act=0,gs={};list.forEach(function(a){plan+=a.budget;act+=spend[a.id]||0;gs[a.grant]=1});tp+=plan;ta+=act;
-    var key='theme:'+th,open=!!S.open[key];
+    var key='project:'+th,open=!!S.open[key];
     rows+='<tr class="l1"><td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+key+'" aria-expanded="'+open+'" aria-label="'+(open?'Collapse':'Expand')+' '+esc(th)+'">'+(open?'▾':'▸')+'</button><div>'+esc(th)+'<small>'+list.length+' activities across '+Object.keys(gs).length+' grant'+(Object.keys(gs).length>1?'s':'')+'</small></div></div></td>'+tcells(plan,act,full,P)+'</tr>';
     if(open)list.forEach(function(a){
       var key2=key+'|act:'+a.id;S.rowF[key2]={f:{g:a.grant,act:a.id},title:a.name+' · '+grantName[a.grant]};
@@ -703,8 +723,8 @@ function themeTable(f){
   });
   if(none>0.5){rows+='<tr class="l2"><td>Not mapped to an activity<div class="note">non-staff entries with no activity code, a retired one, or one that belongs to another grant</div></td>'+tcells(0,none,false,P)+'</tr>';ta+=none}
   rows+='<tr class="tot"><td>Total</td>'+tcells(tp,ta,full,P)+'</tr>';
-  return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>Theme and activity</th><th class="num">Planning budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<p class="note" style="margin:10px 0 0">An activity belongs to one grant and has its own code, so the same kind of work funded by two donors appears as two separate rows, never one. The theme is only a label that groups them. Staff and indirect costs carry no activity and are not in this view.'+(full?'':' Planning budgets are set for the whole country office, so they are not shown for a single hub.')+'</p></div>';
+  return'<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>Project and activity</th><th class="num">Planning budget</th><th class="num">Actual</th><th class="num">Committed</th><th class="num">Balance</th><th>Used</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0">An activity belongs to one grant and has its own code, so the same kind of work funded by two donors appears as two separate rows, never one. The project is the programme area that groups them, and one project can be funded by several grants. Staff and indirect costs carry no activity and are not in this view.'+(full?'':' Planning budgets are set for the whole country office, so they are not shown for a single hub.')+'</p></div>';
 }
 
 function merge(f,key,val){var o={g:f.g,h:f.h,l:f.l};o[key]=val;return o}
@@ -1175,7 +1195,7 @@ function mapCodes(){
   h+='<div class="panel"><h2>Activity codes to activities</h2><p class="note" style="margin-top:0">An activity code is unique across the organisation and belongs to one grant. The same kind of work under two grants has two codes and is tracked as two activities. A posting whose activity belongs to a different grant than its grant code still counts toward the grant, but to no activity.</p><div class="scroll"><table class="st" style="min-width:700px"><thead><tr><th>Activity code in the ledger</th><th>Maps to activity</th><th>Grant</th><th class="num">Entries using it</th><th>Rule</th><th></th></tr></thead><tbody>'+
     ar.map(function(r){
       var code=r.when[0].v,a=actById(r.value),n=entries.filter(function(e){return fieldVal(e,'act')===code}).length;
-      return'<tr><td class="mono">'+esc(code)+'</td><td>'+esc(a?a.name:r.value)+(a?'<div class="note">'+esc(a.theme)+'</div>':'')+'</td><td>'+(a?esc(grantName[a.grant])+'<div class="note mono">'+esc(a.grant)+'</div>':'')+'</td><td class="num">'+n+'</td><td><span class="mono">'+r.id+'</span>'+(r.by==='Base set'?'':' <span class="tag">added now</span>')+'</td><td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>';
+      return'<tr><td class="mono">'+esc(code)+'</td><td>'+esc(a?a.name:r.value)+(a?'<div class="note">'+esc(a.project)+'</div>':'')+'</td><td>'+(a?esc(grantName[a.grant])+'<div class="note mono">'+esc(a.grant)+'</div>':'')+'</td><td class="num">'+n+'</td><td><span class="mono">'+r.id+'</span>'+(r.by==='Base set'?'':' <span class="tag">added now</span>')+'</td><td>'+(can?'<button class="btn" type="button" data-act="rmask" data-arg="'+r.id+'" aria-label="Remove rule '+r.id+'">Remove</button>':'')+'</td></tr>';
     }).join('')+
     (can?'<tr><td><input class="ed" id="cb-act-code" placeholder="New code" aria-label="New activity code"></td><td colspan="2"><select class="ed" id="cb-act-val" aria-label="Maps to activity"><option value="">Choose…</option>'+valueOptions('act').map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td></td><td></td><td><button class="btn" type="button" data-act="cbadd" data-arg="act">Add</button></td></tr>':'')+
     '</tbody></table></div></div>';
@@ -1243,20 +1263,20 @@ function fundLines(g,can){
     (orphans.length?'<div class="banner info" style="margin-top:12px"><span><b>'+orphans.length+' ledger account'+(orphans.length>1?'s have':' has')+' no budget line for this grant:</b> '+orphans.map(function(a){return a+' '+esc(ACCT_NAME[a]||'')}).join(', ')+'.</span><button class="btn" type="button" data-act="gomap" data-arg="matrix">Set them in the account matrix</button></div>':'<p class="note" style="margin:12px 0 0">Every ledger account has a budget line for this grant.</p>');
 }
 function fundActs(g,can){
-  var list=ACTS.filter(function(a){return a.grant===g.id}),plan=0,themeOpts=THEMES.map(function(t){return[t,t]});
+  var list=ACTS.filter(function(a){return a.grant===g.id}),plan=0,projectOpts=PROJECTS.map(function(t){return[t,t]});
   var codes={};RULES.forEach(function(r){if(r.target==='act'&&r.when.length===1&&r.when[0].f==='act')(codes[r.value]=codes[r.value]||[]).push(r.when[0].v)});
   var rows=list.map(function(a){
     var sp=actSpend(a),n=entries.filter(function(e){return e.map.ok&&e.map.act===a.id}).length,twins=ACTS.filter(function(b){return b.name===a.name&&b.grant!==a.grant});plan+=a.budget;
     return'<tr><td class="mono">'+esc(a.code)+'</td><td style="min-width:230px">'+ed('act',a.id,'name',a.name,{can:can,label:'Name of '+a.id})+(twins.length?'<div class="note">The same activity is also funded by '+twins.map(function(b){return esc(grantName[b.grant])}).join(', ')+', under its own code. Each is tracked separately.</div>':'')+'</td>'+
-      '<td style="min-width:150px">'+ed('act',a.id,'theme',a.theme,{can:can,sel:themeOpts,label:'Theme of '+a.id})+'</td><td style="min-width:92px">'+ed('act',a.id,'status',a.status,{can:can,sel:[['Active','Active'],['Closed','Closed']],label:'Status of '+a.id})+'</td>'+
+      '<td style="min-width:150px">'+ed('act',a.id,'project',a.project,{can:can,sel:projectOpts,label:'Project of '+a.id})+'</td><td style="min-width:92px">'+ed('act',a.id,'status',a.status,{can:can,sel:[['Active','Active'],['Closed','Closed']],label:'Status of '+a.id})+'</td>'+
       '<td style="min-width:112px">'+ed('act',a.id,'budget',nfmt(a.budget),{can:can,num:true,label:'Planning budget of '+a.id})+'</td><td class="num">'+nfmt(sp)+'<div class="note">'+(a.budget?Math.round(sp/a.budget*100)+'% used':'')+'</div></td>'+
       '<td><div class="chips">'+(codes[a.id]||[]).map(function(c){return'<span class="chip m">ledger '+esc(c)+'</span>'}).join('')+'</div><div class="note" style="margin-top:4px">'+n+' entries'+(can&&!n?' \u00b7 <button class="link" type="button" data-act="actdel" data-arg="'+a.id+'" aria-label="Remove '+a.id+'">Remove</button>':'')+'</div></td></tr>';
   }).join('');
-  var addrow=can?'<tr><td><input class="ed" id="aa-code" placeholder="Code" aria-label="New activity code" style="min-width:72px"></td><td><input class="ed" id="aa-name" placeholder="Name of the activity" aria-label="New activity name"></td><td><select class="ed" id="aa-theme" aria-label="Theme">'+themeOpts.map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td>Active</td><td><input class="ed num" id="aa-budget" inputmode="numeric" placeholder="Budget" aria-label="New planning budget"></td><td></td><td><button class="btn sm" type="button" data-act="actadd">Add</button></td></tr>':'';
+  var addrow=can?'<tr><td><input class="ed" id="aa-code" placeholder="Code" aria-label="New activity code" style="min-width:72px"></td><td><input class="ed" id="aa-name" placeholder="Name of the activity" aria-label="New activity name"></td><td><select class="ed" id="aa-project" aria-label="Project">'+projectOpts.map(function(o){return'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'}).join('')+'</select></td><td>Active</td><td><input class="ed num" id="aa-budget" inputmode="numeric" placeholder="Budget" aria-label="New planning budget"></td><td></td><td><button class="btn sm" type="button" data-act="actadd">Add</button></td></tr>':'';
   var bu=grantBudgetUSD(g.id)-grantBudgetUSD(g.id,'PER')-grantBudgetUSD(g.id,'IND'),pct=bu?Math.round(plan/bu*100):0;
   var gaps=entries.filter(function(e){return e.map.ok&&e.map.grant===g.id&&!e.map.act&&e.map.line!=='PER'&&e.map.line!=='IND'&&e.m<=S.period}),gapUSD=gaps.reduce(function(t,e){return t+e.kes/FX},0);
   var gcodes={};gaps.forEach(function(e){gcodes[e.act||'no code']=1});
-  return msgBar('act')+'<div class="scroll"><table class="st tight" style="min-width:940px"><thead><tr><th>Code</th><th>Activity</th><th>Theme</th><th>Status</th><th class="num">Planning budget (USD)</th><th class="num">Spend to date (USD)</th><th>Ledger mapping</th></tr></thead><tbody>'+rows+addrow+'</tbody></table></div>'+
+  return msgBar('act')+'<div class="scroll"><table class="st tight" style="min-width:940px"><thead><tr><th>Code</th><th>Activity</th><th>Project</th><th>Status</th><th class="num">Planning budget (USD)</th><th class="num">Spend to date (USD)</th><th>Ledger mapping</th></tr></thead><tbody>'+rows+addrow+'</tbody></table></div>'+
     '<p class="note" style="margin:10px 0 0">An activity belongs to this grant alone and has its own code. Its planning budget covers the grant’s delivery costs (travel, supplies and partner grants, not staff or indirect costs) and adds up to <b>'+nfmt(plan)+' USD</b>, '+(bu?'<b>'+pct+'%</b> of the budget for those lines ('+nfmt(bu)+' USD)':'with no FY2026 budget to compare')+'. '+(pct>100?'<span class="neg">That is more than the budget.</span>':pct&&pct<90?'Part of the budget is not planned to an activity yet.':'')+' Spend comes from ledger entries whose activity code maps to the activity and whose grant code maps to this grant.</p>'+
     (gaps.length?'<p class="note" style="margin:6px 0 0"><b>'+gaps.length+'</b> non-staff entries on this grant (USD '+nfmt(gapUSD)+') carry no activity code, a retired one, or the code of another grant\u2019s activity ('+Object.keys(gcodes).map(esc).join(', ')+'), so they count toward the grant but to no activity. Map the code on the <button class="link" type="button" data-act="gomap" data-arg="codes">Codes tab</button>.</p>':'')+
     importPanel('acts',can);
@@ -1283,9 +1303,9 @@ IMP.funding={
 };
 IMP.acts={
   title:'Paste activities from Excel',header:'code',
-  help:'Columns: activity code (unique across the organisation), name, theme (Nutrition, Water and hygiene or Education) and planning budget in USD. They are added to the grant selected above, and the ledger code is mapped to each one. Two grants doing the same kind of work get two activities with two codes.',
+  help:'Columns: activity code (unique across the organisation), name, project (Nutrition, Water and hygiene or Education) and planning budget in USD. They are added to the grant selected above, and the ledger code is mapped to each one. Two grants doing the same kind of work get two activities with two codes.',
   placeholder:'2600500\tMobile outreach clinics\tNutrition\t80000',
-  sample:'code\tname\ttheme\tbudget\n2600500\tCommunity health volunteers\tNutrition\t45000\n2600507\tOutreach radio campaign\tEducation\t30000\n2600100\tCode already in use\tNutrition\t1000\n2600514\tUnknown theme\tFarming\t20000\n2600521\tMissing budget\tNutrition',
+  sample:'code\tname\tproject\tbudget\n2600500\tCommunity health volunteers\tNutrition\t45000\n2600507\tOutreach radio campaign\tEducation\t30000\n2600100\tCode already in use\tNutrition\t1000\n2600514\tUnknown project\tNutriton\t20000\n2600521\tMissing budget\tNutrition',
   parse:function(c,recs){
     var code=(c[0]||'').toUpperCase();
     if(!/^[A-Z0-9-]{3,14}$/.test(code))return{err:'The code must be 3 to 14 letters, digits or dashes.'};
@@ -1293,10 +1313,10 @@ IMP.acts={
     if(used)return{err:'Code '+code+' is already used by '+used.name+' under '+grantName[used.grant]+'.'};
     if(recs.some(function(r){return r.id===code}))return{err:'Code '+code+' appears twice in what you pasted.'};
     if(!c[1])return{err:'The name is empty.'};
-    var th=THEMES.filter(function(t){return t.toLowerCase()===(c[2]||'').toLowerCase()})[0];
-    if(!th)return{err:'"'+(c[2]||'')+'" is not a theme. Use '+THEMES.join(', ')+'.'};
+    var th=PROJECTS.filter(function(t){return t.toLowerCase()===(c[2]||'').toLowerCase()})[0];
+    if(!th){var sg=closest(PROJECTS,c[2]);return{err:'"'+(c[2]||'')+'" is not a project.'+(sg?' Did you mean '+sg+'?':' Use '+PROJECTS.join(', ')+'.')}}
     var b=parseNum(c[3]);if(isNaN(b))return{err:'The planning budget must be a number.'};
-    return{rec:{id:code,code:code,grant:S.fs,name:c[1],theme:th,status:'Active',budget:b,w:1}};
+    return{rec:{id:code,code:code,grant:S.fs,name:c[1],project:th,status:'Active',budget:b,w:1}};
   },
   apply:function(recs){
     recs.forEach(function(a){ACTS.push(a)});
@@ -1319,7 +1339,7 @@ function commitEdit(t,id,f,raw){
   }else if(t==='act'){
     var a=actById(id);if(!a||!canSetup())return;
     if(f==='name'){v=v.trim();if(!v)msg='The activity name cannot be empty.'}
-    else if(f==='theme'){if(THEMES.indexOf(v)<0)msg='Choose one of the listed themes.'}
+    else if(f==='project'){if(PROJECTS.indexOf(v)<0)msg='Choose one of the listed projects.'}
     else if(f==='budget'){v=parseNum(v);if(isNaN(v))msg='The planning budget must be a number.'}
     if(!msg){a[f]=v;what='the '+f+' of activity '+id+' to '+(f==='budget'?nfmt(v):v)}
   }else if(t==='line'){
@@ -1335,6 +1355,91 @@ function commitEdit(t,id,f,raw){
   S.msg[tag]=msg?id+': '+msg:'';
   if(!msg&&what)logIt('changed '+what);
   setTimeout(renderKeep,0);
+}
+
+
+/* ---------- screen: coverage ----------
+   Is every cost we plan covered by money we hold? Planned cost against the funding behind it, by hub, then category,
+   then project, then the position or activity. */
+function covLeaves(){
+  var out=[],sal=!!role().salary,dem={},pp=[];
+  if(sal)POSITIONS.forEach(function(x){
+    if(!roleHubOK(x.hub))return;
+    var parts={},cost=0,m;
+    for(m=1;m<=12;m++){if(!monthActive(x,m))continue;cost+=x.salary/FX;x.splits.forEach(function(sp){if(splitActive(sp,m)){parts[sp.src]=(parts[sp.src]||0)+x.salary*(Number(sp.pct)||0)/100/FX}})}
+    if(!cost)return;
+    pp.push({x:x,cost:cost,parts:parts});
+    Object.keys(parts).forEach(function(q){if(q!=='CORE'){var k=q+'|'+x.hub;dem[k]=(dem[k]||0)+parts[q]}});
+  });
+  pp.forEach(function(r){
+    var fund=0;
+    Object.keys(r.parts).forEach(function(q){
+      if(q==='CORE'){fund+=r.parts[q];return}
+      var k=q+'|'+r.x.hub,b=B[k]?sum(B[k].approved.PER):0;
+      if(dem[k])fund+=b*r.parts[q]/dem[k];
+    });
+    out.push({hub:r.x.hub,cat:r.x.type==='Support'?'Support staff':'Programme staff',project:r.x.project||'Project not set',key:r.x.no,label:r.x.title,sub:r.x.name+' · '+r.x.no,cost:r.cost,fund:fund});
+  });
+  var ns={},NS={},pt={};
+  Object.keys(B).forEach(function(k){var v=0;['TRV','SUP','PTN'].forEach(function(l){v+=sum(B[k].approved[l])});ns[k]=v;var g=k.split('|')[0];NS[g]=(NS[g]||0)+v});
+  ACTS.forEach(function(a){pt[a.grant]=(pt[a.grant]||0)+a.budget});
+  ACTS.forEach(function(a){HUBS.forEach(function(h){
+    var k=a.grant+'|'+h.id;if(!roleHubOK(h.id)||!ns[k])return;
+    out.push({hub:h.id,cat:'Non-staff',project:a.project,key:a.id,label:a.name,sub:grantName[a.grant]+' · code '+a.code,cost:NS[a.grant]?a.budget*ns[k]/NS[a.grant]:0,fund:pt[a.grant]?ns[k]*a.budget/pt[a.grant]:0});
+  })});
+  return out;
+}
+function covStatus(c,f){
+  if(c<=0)return['none','No cost'];
+  var r=f/c;
+  return r<0.9?['crit','Gap']:r<0.995?['warn','Small gap']:r<=1.05?['good','Covered']:['none','Surplus'];
+}
+function covCells(c,f){
+  var st=covStatus(c,f),r=c?f/c:0,bal=f-c;
+  return'<td class="num">'+fmt(c)+'</td><td class="num">'+fmt(f)+'</td><td class="num'+(bal<-0.5&&r<0.995?' neg':'')+'">'+fmt(bal)+'</td>'+
+    '<td><div class="usedcell"><div class="bar'+(r<0.9&&c>0?' over':'')+'" style="flex:1" title="'+Math.round(r*100)+'% of the planned cost has funding behind it"><i class="a" style="width:'+Math.min(100,r*100)+'%"></i></div><span>'+Math.round(r*100)+'%</span></div></td><td><span class="pill '+st[0]+'">'+st[1]+'</span></td>';
+}
+function renderCoverage(){
+  var sal=!!role().salary,h='<h1>Coverage</h1><p class="lede">Is every planned cost covered by money we hold? Planned cost against the funding behind it, by hub, then category, then project, then the position or activity. A gap is cost with no funding behind it.</p>';
+  if(!S.cvInit){S.cvInit=1;S.open['cv:NBO']=true}
+  var all=covLeaves().filter(function(l){return hubOK(l.hub)}),tc=0,tf=0,gaps=0;
+  all.forEach(function(l){tc+=l.cost;tf+=l.fund;if(l.cost>0&&l.fund/l.cost<0.995)gaps++});
+  var hubOpts='<option value="">All hubs you can see</option>'+HUBS.filter(function(x){return roleHubOK(x.id)}).map(function(x){return'<option value="'+x.id+'"'+(S.scope===x.id?' selected':'')+'>'+x.name+'</option>'}).join('');
+  h+='<div class="row"><div class="field"><label for="cv-scope">Hub</label><select id="cv-scope" data-change="scope"'+(role().hubs.length===1?' disabled':'')+'>'+hubOpts+'</select></div>'+
+    '<div class="field"><label id="cvl">Show lines</label><div class="seg" role="group" aria-labelledby="cvl"><button type="button" data-act="cvonly" data-arg="" aria-pressed="'+(!S.cvOnly)+'">All</button><button type="button" data-act="cvonly" data-arg="1" aria-pressed="'+(!!S.cvOnly)+'">With a gap</button></div></div></div>';
+  if(!sal)h+='<div class="banner info"><span>Staff costs are hidden for your role, so only non-staff costs are shown.</span></div>';
+  var bal=tf-tc;
+  h+='<div class="stats">'+stat('Planned cost',fmt(tc),S.cur+', FY2026')+stat('Funding behind it',fmt(tf),tc?Math.round(tf/tc*100)+'% of the planned cost':'')+
+    '<div class="stat'+(bal<-0.5?' neg':'')+'"><small>Gap or surplus</small><strong>'+fmt(bal)+'</strong><span>'+(bal<-0.5?'cost with no funding behind it':'funding left after the planned cost')+'</span></div>'+
+    '<div class="stat'+(gaps?' neg':'')+'"><small>Lines with a gap</small><strong>'+gaps+'</strong><span>'+(gaps?'positions or activities with less funding than cost':'every line is covered')+'</span></div></div>';
+  var rows='',byHub={},CATS=['Programme staff','Support staff','Non-staff'];
+  all.forEach(function(l){(byHub[l.hub]=byHub[l.hub]||[]).push(l)});
+  function tot(list){var c=0,f=0;list.forEach(function(l){c+=l.cost;f+=l.fund});return[c,f]}
+  HUBS.forEach(function(hb){
+    var hl=byHub[hb.id];if(!hl)return;
+    var t=tot(hl),k1='cv:'+hb.id,o1=!!S.open[k1];
+    rows+='<tr class="l1"><td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+k1+'" aria-expanded="'+o1+'" aria-label="'+(o1?'Collapse':'Expand')+' '+esc(hb.name)+'">'+(o1?'▾':'▸')+'</button><div>'+esc(hb.name)+'<small>'+hl.length+' lines</small></div></div></td>'+covCells(t[0],t[1])+'</tr>';
+    if(!o1)return;
+    CATS.forEach(function(cat){
+      var cl=hl.filter(function(l){return l.cat===cat});if(!cl.length)return;
+      var t2=tot(cl),k2=k1+'|'+cat,o2=!!S.open[k2];
+      rows+='<tr class="l2"><td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+k2+'" aria-expanded="'+o2+'" aria-label="'+(o2?'Collapse':'Expand')+' '+esc(cat)+'">'+(o2?'▾':'▸')+'</button><div>'+esc(cat)+'</div></div></td>'+covCells(t2[0],t2[1])+'</tr>';
+      if(!o2)return;
+      var pj={},order=[];cl.forEach(function(l){if(!pj[l.project]){pj[l.project]=[];order.push(l.project)}pj[l.project].push(l)});
+      order.sort().forEach(function(pn){
+        var pl=pj[pn],t3=tot(pl),k3=k2+'|'+pn,o3=!!S.open[k3];
+        rows+='<tr class="l3"><td><div class="name"><button type="button" class="chev" data-act="toggle" data-arg="'+k3+'" aria-expanded="'+o3+'" aria-label="'+(o3?'Collapse':'Expand')+' '+esc(pn)+'">'+(o3?'▾':'▸')+'</button><div>'+esc(pn)+'<small>'+pl.length+' line'+(pl.length>1?'s':'')+'</small></div></div></td>'+covCells(t3[0],t3[1])+'</tr>';
+        if(!o3)return;
+        pl.slice().sort(function(a,b){return(a.fund-a.cost)-(b.fund-b.cost)}).forEach(function(l){
+          if(S.cvOnly&&!(l.cost>0&&l.fund/l.cost<0.995))return;
+          rows+='<tr class="l4"><td>'+esc(l.label)+'<div class="note">'+esc(l.sub)+'</div></td>'+covCells(l.cost,l.fund)+'</tr>';
+        });
+      });
+    });
+  });
+  h+='<div class="panel"><div class="scroll"><table class="tbl"><thead><tr><th>Hub, category, project and line</th><th class="num">Planned cost</th><th class="num">Funding behind it</th><th class="num">Gap or surplus</th><th>Covered</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0"><b>Planned cost</b> is salary for each month a position is in post, and for non-staff the activity planning budgets (shared across hubs by each grant’s non-staff budget). <b>Funding behind it</b> is the approved personnel budget of each grant, shared across the positions it pays for in proportion to their cost, plus unrestricted money for core-funded time; for non-staff, the grant’s travel, supplies and partner budget shared across its activities by planning budget. A position whose funding adds up to less than 100% shows a gap, and over 100% shows a surplus until it is fixed on Staff and funding. Indirect costs are not part of this view. Status: Gap is under 90% covered, Small gap is under 99.5%, Covered is up to 105%, Surplus is above that.</p></div>';
+  return h;
 }
 
 /* ---------- screen: staff and funding ---------- */
@@ -1402,7 +1507,7 @@ function renderStaff(){
     var can=canHub(x.hub),st=posState(x),pill=x.status==='Ended'&&st==='ok'?'<span class="pill none">Ended</span>':st==='ok'?'<span class="pill ok">Adds up to 100%</span>':st==='none'?'<span class="pill none">Not in post in FY2026</span>':'<span class="pill '+(st==='over'?'crit':'warn')+'" title="'+esc(posProblem(x))+'">'+esc(posProblem(x))+'</span>';
     return'<tr><td class="mono" style="width:96px">'+x.no+'<div style="margin-top:4px">'+ed('staff',x.no,'status',x.status,{can:can,sel:[['Active','Active'],['Ended','Ended']],label:'Status of '+x.no})+'</div></td>'+
       '<td style="min-width:170px"><div class="stk">'+ed('staff',x.no,'name',x.name,{can:can,label:'Name of '+x.no})+ed('staff',x.no,'title',x.title,{can:can,label:'Position of '+x.no})+'</div></td>'+
-      '<td style="width:128px;min-width:128px"><div class="stk">'+ed('staff',x.no,'type',x.type,{can:can,sel:[['Programme','Programme'],['Support','Support']],label:'Type of '+x.no})+
+      '<td style="width:170px;min-width:170px"><div class="stk">'+ed('staff',x.no,'type',x.type,{can:can,sel:[['Programme','Programme'],['Support','Support']],label:'Type of '+x.no})+ed('staff',x.no,'project',x.project||'',{can:can,sel:[['','Project not set']].concat(ALL_PROJECTS.map(function(q){return[q,q]})),label:'Project of '+x.no})+
         ed('staff',x.no,'hub',x.hub,{can:can,sel:HUBS.filter(function(hb){return roleHubOK(hb.id)}).map(function(hb){return[hb.id,hb.name]}),label:'Hub of '+x.no})+'</div></td>'+
       '<td style="width:100px">'+(sal?ed('staff',x.no,'salary',nfmt(x.salary),{can:can,num:true,label:'Monthly salary of '+x.no}):'<span class="muted">Hidden</span>')+'</td>'+
       '<td style="width:136px"><div class="stk">'+ed('staff',x.no,'start',x.start,{can:can,type:'date',label:'Contract start of '+x.no})+ed('staff',x.no,'end',x.end,{can:can,type:'date',label:'Contract end of '+x.no})+'</div></td>'+
@@ -1421,6 +1526,7 @@ function commitStaff(no,f,v){
   else if(f==='start'){if(!validDate(v))msg='Use a real date, written as YYYY-MM-DD.';else if(x.end&&x.end<v)msg='The contract cannot end before it starts.'}
   else if(f==='end'){if(v!==''&&!validDate(v))msg='Use a real date written as YYYY-MM-DD, or leave it empty.';else if(v&&v<x.start)msg='The contract cannot end before it starts.'}
   else if(f==='hub'){if(!canHub(v))msg='You can only move a position to a hub you work in.'}
+  else if(f==='project'){if(v&&ALL_PROJECTS.indexOf(v)<0)msg='Choose one of the listed projects.'}
   if(msg)return{msg:msg,what:''};
   x[f]=v;
   if(f==='status'){if(v==='Ended'&&!x.end)x.end='2026-10-20';if(v==='Active'&&x.end&&x.end<'2026-10-21')x.end=''}
@@ -1430,9 +1536,9 @@ function nextPosNo(){var n=1000;POSITIONS.forEach(function(x){var k=Number(x.no.
 function prevDay(d){var p=d.split('-'),t=new Date(Number(p[0]),Number(p[1])-1,Number(p[2])-1);return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())}
 IMP.staff={
   title:'Paste positions from Excel',header:'emp no',
-  help:'Columns: employee number (leave empty to number it automatically), name, position, type (Programme or Support), hub, monthly salary in KES, contract start, and contract end (optional). The new positions arrive with no funding, so open each one to share its salary across funding sources.',
+  help:'Columns: employee number (leave empty to number it automatically), name, position, type (Programme or Support), hub, monthly salary in KES, contract start, contract end (optional) and project (optional; a sector such as Nutrition or a function such as Finance, worked out from the position if empty). The new positions arrive with no funding, so open each one to share its salary across funding sources.',
   placeholder:'E-1100\tAmina Njoroge\tField coordinator\tProgramme\tGarissa\t240000\t2026-11-01',
-  sample:'emp no\tname\tposition\ttype\thub\tsalary\tstart\tend\n\tJoy Chepkoech\tField coordinator\tProgramme\tGarissa\t240000\t2026-11-01\t\nE-1001\tDuplicate number\tClerk\tSupport\tNBO\t90000\t2026-11-01\t\n\tLeo Karanja\tData clerk\tClerical\tNairobi\t90000\t2026-11-01\t\n\tRita Wafula\tData clerk\tSupport\tKisumu\tninety thousand\t2026-11-01\t',
+  sample:'emp no\tname\tposition\ttype\thub\tsalary\tstart\tend\tproject\n\tJoy Chepkoech\tField coordinator\tProgramme\tGarissa\t240000\t2026-11-01\t\tNutrition\nE-1001\tDuplicate number\tClerk\tSupport\tNBO\t90000\t2026-11-01\t\t\n\tLeo Karanja\tData clerk\tSupport\tKisumu\t95000\t2026-11-01\t\tFinnance\n\tAnn Wairimu\tDriver\tSupport\tKisumu\t70000\t2026-11-01\t\t\n\tBad Salary\tDriver\tSupport\tNairobi\tabc\t2026-11-01\t\t',
   parse:function(c,recs){
     var no=c[0]||'';
     if(no&&(posById(no)||recs.some(function(r){return r.no===no})))return{err:'The employee number '+no+' is already used.'};
@@ -1446,7 +1552,9 @@ IMP.staff={
     var sl=parseNum(c[5]);if(isNaN(sl)||sl<=0)return{err:'The salary must be a number above zero.'};
     if(!validDate(c[6]))return{err:'The contract start must be a real date written as YYYY-MM-DD.'};
     if(c[7]&&(!validDate(c[7])||c[7]<c[6]))return{err:'The contract end must be a real date after the start, or empty.'};
-    return{rec:{no:no,name:c[1],title:c[2],type:ty,hub:hb.id,salary:sl,start:c[6],end:c[7]||'',status:'Active',splits:[]}};
+    var pj=(c[8]||'')?ALL_PROJECTS.filter(function(q){return q.toLowerCase()===c[8].toLowerCase()})[0]:titleProject(c[2],ty);
+    if(c[8]&&!pj){var sg=closest(ALL_PROJECTS,c[8]);return{err:'"'+c[8]+'" is not a project.'+(sg?' Did you mean '+sg+'?':'')}}
+    return{rec:{no:no,name:c[1],title:c[2],type:ty,project:pj||'',hub:hb.id,salary:sl,start:c[6],end:c[7]||'',status:'Active',splits:[]}};
   },
   apply:function(recs){
     recs.forEach(function(r){if(!r.no)r.no=nextPosNo();POSITIONS.push(r)});
@@ -1488,7 +1596,7 @@ function renderStaffDrawer(d,host){
 /* ---------- rendering and events ---------- */
 function render(){
   refreshNames();recompute();chrome();
-  var h=S.view==='budgets'?renderBudgets():S.view==='ledger'?renderLedger():S.view==='maps'?renderMaps():S.view==='funding'?renderFunding():S.view==='staff'?renderStaff():renderBVA();
+  var h=S.view==='budgets'?renderBudgets():S.view==='ledger'?renderLedger():S.view==='maps'?renderMaps():S.view==='funding'?renderFunding():S.view==='staff'?renderStaff():S.view==='coverage'?renderCoverage():renderBVA();
   $('main').innerHTML=h;
   if(S.view==='budgets')patchGrid();
   renderDrawer();
@@ -1507,6 +1615,7 @@ document.addEventListener('click',function(ev){
   }
   else if(act==='mode'){S.mode=arg;render()}
   else if(act==='toggle'){S.open[arg]=!S.open[arg];render()}
+  else if(act==='cvonly'){S.cvOnly=!!arg;render()}
   else if(act==='drill'){openDrawer(arg)}
   else if(act==='close'){S.drawer=null;renderDrawer()}
   else if(act==='src'){S.ledgerSrc=arg;render()}
@@ -1531,7 +1640,7 @@ document.addEventListener('click',function(ev){
   else if(act==='staffedit'){S.drawer={kind:'staff',no:arg};render()}
   else if(act==='staffrep'){S.drawer={kind:'replace',no:arg};S.msg.rep='';render()}
   else if(act==='staffadd'){
-    var hb=role().hubs[0],np={no:nextPosNo(),name:'New holder',title:'New position',type:'Programme',hub:hb,salary:200000,start:'2026-11-01',end:'',status:'Active',splits:[]};
+    var hb=role().hubs[0],np={no:nextPosNo(),name:'New holder',title:'New position',type:'Programme',project:'',hub:hb,salary:200000,start:'2026-11-01',end:'',status:'Active',splits:[]};
     if(S.scope&&canHub(S.scope))np.hub=S.scope;
     POSITIONS.push(np);logIt('added position '+np.no+' in '+hubName[np.hub]);S.drawer={kind:'staff',no:np.no};render();
   }
@@ -1557,7 +1666,7 @@ document.addEventListener('click',function(ev){
     S.msg.rep=rm;
     if(rm){render();return}
     old.end=prevDay(rd);old.status='Ended';
-    var nw={no:nextPosNo(),name:rn,title:old.title,type:old.type,hub:old.hub,salary:rs,start:rd,end:'',status:'Active',splits:old.splits.map(function(sp){return{src:sp.src,pct:sp.pct,from:(sp.from&&sp.from>rd)?sp.from:'',to:sp.to}})};
+    var nw={no:nextPosNo(),name:rn,title:old.title,type:old.type,project:old.project,hub:old.hub,salary:rs,start:rd,end:'',status:'Active',splits:old.splits.map(function(sp){return{src:sp.src,pct:sp.pct,from:(sp.from&&sp.from>rd)?sp.from:'',to:sp.to}})};
     POSITIONS.push(nw);logIt('replaced the holder of '+old.no+' with '+nw.no+' from '+rd);toast('Replaced. '+old.no+' ended on '+old.end+'; '+nw.no+' starts on '+rd+'.');S.drawer=null;render();
   }
   else if(act==='fsel'){S.fs=arg;render()}
@@ -1583,14 +1692,14 @@ document.addEventListener('click',function(ev){
   }
   else if(act==='actadd'){
     if(!canSetup())return;
-    var ac=($('aa-code').value||'').trim().toUpperCase(),an=($('aa-name').value||'').trim(),ath=$('aa-theme').value,ab=parseNum($('aa-budget').value||'0'),am='',aid=ac,ex=actById(ac);
+    var ac=($('aa-code').value||'').trim().toUpperCase(),an=($('aa-name').value||'').trim(),ath=$('aa-project').value,ab=parseNum($('aa-budget').value||'0'),am='',aid=ac,ex=actById(ac);
     if(!/^[A-Z0-9-]{3,14}$/.test(ac))am='The code must be 3 to 14 letters, digits or dashes.';
     else if(ex)am='Code '+ac+' is already used by '+ex.name+' under '+grantName[ex.grant]+'.';
     else if(!an)am='Give the activity a name.';
     else if(isNaN(ab))am='The planning budget must be a number.';
     S.msg.act=am?'New activity: '+am:'';
     if(am){render();return}
-    ACTS.push({id:aid,code:ac,grant:S.fs,name:an,theme:ath,status:'Active',budget:ab,w:1});
+    ACTS.push({id:aid,code:ac,grant:S.fs,name:an,project:ath,status:'Active',budget:ab,w:1});
     applyRuleChange([{target:'act',when:[{f:'act',v:ac}],value:aid,note:'New activity'}],[],'added activity '+aid+' to '+grantName[S.fs]);render();
   }
   else if(act==='actdel'){
