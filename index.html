@@ -288,7 +288,7 @@ body{margin:0}
 (function(){
 'use strict';
 /* ---------- constants and synthetic data ---------- */
-var FX=130, CLOSED=9;
+var FX=140, CLOSED=9;
 var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var HUBS=[{id:'NBO',name:'Nairobi'},{id:'GRS',name:'Garissa'},{id:'KSM',name:'Kisumu'}];
 var GRANTS=[
@@ -372,7 +372,7 @@ var BASE={
   'EDU1|KSM':{PER:136000,TRV:35000,SUP:85000,PTN:70000},
   'EDU2|KSM':{PER:80000,TRV:25000,SUP:60000,PTN:45000},
   'EDU2|GRS':{PER:70000,TRV:22000,SUP:50000,PTN:38000}};
-/* BASE is in USD a year; SCALE brings the demo to about USD 4.5 million (KES 590 million) a year across six grants */
+/* BASE is in USD a year; SCALE brings the demo to about USD 4.5 million (KES 630 million) a year across six grants */
 var SCALE=1.15;
 var B={};
 Object.keys(BASE).forEach(function(k){
